@@ -4,7 +4,7 @@ module.exports.config = {
   name: "pet",
   version: "7.0.0",
   hasPermission: 0,
-  credits: "Les Ombres",
+  credits: "chris st",
   description: "ULTIMATE PET UNIVERSE v7.0",
   commandCategory: "Game",
   usages: "[shop/buy/view/feed/train/battle/evolve/daily/explore/...]",
