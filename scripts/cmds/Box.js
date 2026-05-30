@@ -9,7 +9,7 @@ module.exports = {
 		version: "2.0",
 		author: "Minato Namikaze",
 		countDown: 5,
-		role: 1,
+		role: 0,
 		shortDescription: {
 			fr: "Gestion complète du groupe"
 		},
