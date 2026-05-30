@@ -4,176 +4,235 @@ const moment = require("moment-timezone");
 module.exports = {
 	config: {
 		name: "ban",
-		version: "1.4",
-		author: "NTKhang",
+	version: "1.5.2",
+	author: "NTKhang",
 		countDown: 5,
-		role: 1,
+	role: 1,
 		description: {
 			vi: "Cấm thành viên khỏi box chat",
-			en: "Ban user from box chat"
-		},
+			en: "Bannir un membre du groupe"
+	},
 		category: "box chat",
-		guide: {
-			vi: "   {pn} [@tag|uid|link fb|reply] [<lý do cấm>|để trống nếu không có lý do]: Cấm thành viên khỏi box chat"
-				+ "\n   {pn} check: Kiểm tra thành viên bị cấm và kick thành viên đó ra khỏi box chat"
-				+ "\n   {pn} unban [@tag|uid|link fb|reply]: Bỏ cấm thành viên khỏi box chat"
-				+ "\n   {pn} list: Xem danh sách thành viên bị cấm",
-			en: "   {pn} [@tag|uid|fb link|reply] [<reason>|leave blank if no reason]: Ban user from box chat"
-				+ "\n   {pn} check: Check banned members and kick them out of the box chat"
-				+ "\n   {pn} unban [@tag|uid|fb link|reply]: Unban user from box chat"
-				+ "\n   {pn} list: View the list of banned members"
-		}
+	guide: {
+			vi: " {pn} [@tag|uid|link|reply] [lý do]: Cấm"
+				+ "\n {pn} unban [@tag|uid|link|reply]: Bỏ cấm"
+				+ "\n {pn} list : Xem danh sách"
+				+ "\n {pn} check: Kick người bị cấm",
+			en: " {pn} [@tag|uid|link|reply] [raison]: Bannir"
+				+ "\n {pn} unban [@tag|uid|link|reply]: Débannir"
+				+ "\n {pn} list : Voir la liste"
+				+ "\n {pn} check: Expulser les bannis"
+	}
 	},
 
 	langs: {
-		vi: {
-			notFoundTarget: "⚠️ | Vui lòng tag người cần cấm hoặc nhập uid hoặc link fb hoặc phản hồi tin nhắn của người cần cấm",
-			notFoundTargetUnban: "⚠️ | Vui lòng tag người cần bỏ cấm hoặc nhập uid hoặc link fb hoặc phản hồi tin nhắn của người cần bỏ cấm",
-			userNotBanned: "⚠️ | Người mang id %1 không bị cấm khỏi box chat này",
-			unbannedSuccess: "✅ | Đã bỏ cấm %1 khỏi box chat!",
-			cantSelfBan: "⚠️ | Bạn không thể tự cấm chính mình!",
-			cantBanAdmin: "❌ | Bạn không thể cấm quản trị viên!",
-			existedBan: "❌ | Người này đã bị cấm từ trước!",
+	vi: {
+			notFoundTarget: "Vui lòng tag/uid/link/reply người cần cấm",
+			notFoundTargetUnban: "Vui lòng tag/uid/link/reply người cần bỏ cấm",
+			userNotBanned: "Người ID %1 không bị cấm",
+			unbannedSuccess: "Đã bỏ cấm %1",
+			cantSelfBan: "Không thể tự cấm mình",
+			cantBanAdmin: "Không thể cấm quản trị viên",
+			existedBan: "Người này đã bị cấm",
 			noReason: "Không có lý do",
-			bannedSuccess: "✅ | Đã cấm %1 khỏi box chat!",
-			needAdmin: "⚠️ | Bot cần quyền quản trị viên để kick thành viên bị cấm",
-			noName: "Người dùng facebook",
-			noData: "📑 | Không có thành viên nào bị cấm trong box chat này",
-			listBanned: "📑 | Danh sách thành viên bị cấm trong box chat này (trang %1/%2)",
-			content: "%1/ %2 (%3)\nLý do: %4\nThời gian cấm: %5\n\n",
-			needAdminToKick: "⚠️ | Thành viên %1 (%2) bị cấm khỏi box chat, nhưng bot không có quyền quản trị viên để kick thành viên này, vui lòng cấp quyền quản trị viên cho bot để kick thành viên này",
-			bannedKick: "⚠️ | %1 đã bị cấm khỏi box chat từ trước!\nUID: %2\nLý do: %3\nThời gian cấm: %4\n\nBot đã tự động kick thành viên này"
-		},
-		en: {
-			notFoundTarget: "⚠️ | Please tag the person to ban or enter uid or fb link or reply to the message of the person to ban",
-			notFoundTargetUnban: "⚠️ | Please tag the person to unban or enter uid or fb link or reply to the message of the person to unban",
-			userNotBanned: "⚠️ | The person with id %1 is not banned from this box chat",
-			unbannedSuccess: "✅ | Unbanned %1 from box chat!",
-			cantSelfBan: "⚠️ | You can't ban yourself!",
-			cantBanAdmin: "❌ | You can't ban the administrator!",
-			existedBan: "❌ | This person has been banned before!",
-			noReason: "No reason",
-			bannedSuccess: "✅ | Banned %1 from box chat!",
-			needAdmin: "⚠️ | Bot needs administrator permission to kick banned members",
-			noName: "Facebook user",
-			noData: "📑 | There are no banned members in this box chat",
-			listBanned: "📑 | List of banned members in this box chat (page %1/%2)",
-			content: "%1/ %2 (%3)\nReason: %4\nBan time: %5\n\n",
-			needAdminToKick: "⚠️ | Member %1 (%2) has been banned from box chat, but the bot does not have administrator permission to kick this member, please grant administrator permission to the bot to kick this member",
-			bannedKick: "⚠️ | %1 has been banned from box chat before!\nUID: %2\nReason: %3\nBan time: %4\n\nBot has automatically kicked this member"
-		}
+			bannedSuccess: "Đã cấm %1",
+			needAdmin: "Bot cần quyền QTV để kick",
+			noName: "User Facebook",
+			noData: "Không có ai bị cấm",
+			listBanned: "Danh sách bị cấm trang %1/%2",
+			content: "%1/ %2 (%3)\nLý do: %4\nThời gian: %5\n",
+			needAdminToKick: "Thành viên %1 bị cấm nhưng bot không có QTV",
+			bannedKick: "%1 đã bị cấm trước đó\nUID: %2\nLý do: %3\nThời gian: %4\nBot đã kick",
+			invalidPage: "Số trang không hợp lệ"
+	},
+	en: {
+			notFoundTarget: "⚠️ Veuillez taguer/mettre l'UID/lien FB ou répondre au message de la personne à bannir",
+			notFoundTargetUnban: "⚠️ Veuillez taguer/mettre l'UID/lien FB ou répondre au message de la personne à débannir",
+			userNotBanned: "⚠️ L'utilisateur avec l'ID %1 n'est pas banni de ce groupe",
+			unbannedSuccess: "✅ %1 a été débanni du groupe!",
+			cantSelfBan: "⚠️ Tu ne peux pas te bannir toi-même!",
+			cantBanAdmin: "❌ Tu ne peux pas bannir un administrateur!",
+			existedBan: "❌ Cette personne est déjà bannie!",
+			noReason: "Aucune raison",
+			bannedSuccess: "✅ %1 a été banni du groupe!",
+			needAdmin: "⚠️ Le bot a besoin des droits admin pour expulser les membres bannis",
+			noName: "Utilisateur Facebook",
+			noData: "📑 Aucun membre banni dans ce groupe",
+			listBanned: "📑 Liste des membres bannis - Page %1/%2",
+			content: "%1/ %2 (%3)\nRaison: %4\nDate: %5\n",
+			needAdminToKick: "⚠️ Le membre %1 (%2) est banni mais le bot n'a pas les droits admin pour l'expulser",
+			bannedKick: "⚠️ %1 était déjà banni du groupe!\nUID: %2\nRaison: %3\nDate: %4\nLe bot l'a automatiquement expulsé",
+			invalidPage: "Numéro de page invalide"
+	}
 	},
 
 	onStart: async function ({ message, event, args, threadsData, getLang, usersData, api }) {
-		const { members, adminIDs } = await threadsData.get(event.threadID);
-		const { senderID } = event;
-		let target;
-		let reason;
+		const { threadID, senderID } = event;
+		const { members, adminIDs } = await threadsData.get(threadID);
+		const botID = api.getCurrentUserID();
+		const dataBanned = await threadsData.get(threadID, 'data.banned_ban') || [];
 
-		const dataBanned = await threadsData.get(event.threadID, 'data.banned_ban', []);
+		function frame(text) {
+			return `
+❖ ── ✦ ──『⚠️』── ✦ ── ❖
 
+${text}
+❖ ── ✦ ──『⚠️』── ✦ ── ❖
+
+`;
+	}
+
+		function getTarget() {
+			if (event.messageReply?.senderID) return event.messageReply.senderID;
+			if (Object.keys(event.mentions || {}).length) return Object.keys(event.mentions)[0];
+			if (!isNaN(args[1])) return args[1];
+			if (args[1]?.startsWith('https')) return findUid(args[1]);
+			return null;
+	}
+
+		const timeNow = moment().tz("Africa/Kinshasa").format('HH:mm:ss DD/MM/YYYY');
+
+	// DÉBAN
 		if (args[0] == 'unban') {
-			if (!isNaN(args[1]))
-				target = args[1];
-			else if (args[1]?.startsWith('https'))
-				target = await findUid(args[1]);
-			else if (Object.keys(event.mentions || {}).length)
-				target = Object.keys(event.mentions)[0];
-			else if (event.messageReply?.senderID)
-				target = event.messageReply.senderID;
-			else
-				return api.sendMessage(getLang('notFoundTargetUnban'), event.threadID, event.messageID);
+			const target = getTarget();
+			if (!target) return message.reply(frame(`🚀 ❲ Minato Namikaze ❳ 🚀
+╭── ⚠️ 𝗘𝗿𝗲𝘂𝗿 ───
+│ ${getLang('notFoundTargetUnban')}
+╰──────────────────`));
 
 			const index = dataBanned.findIndex(item => item.id == target);
-			if (index == -1)
-				return api.sendMessage(getLang('userNotBanned', target), event.threadID, event.messageID);
+			if (index == -1) return message.reply(frame(`🚀 ❲ Minato Namikaze ❳ 🚀
+╭── ℹ️ 𝗜𝗻𝗳𝗼 ───
+│ ${getLang('userNotBanned', target)}
+╰──────────────────`));
 
 			dataBanned.splice(index, 1);
-			await threadsData.set(event.threadID, dataBanned, 'data.banned_ban');
-			const userName = members[target]?.name || await usersData.getName(target) || getLang('noName');
+			await threadsData.set(threadID, dataBanned, 'data.banned_ban');
+			const userName = members.find(m => m.userID == target)?.name || await usersData.getName(target) || getLang('noName');
+			
+			return message.reply(frame(`🚀 ❲ Minato Namikaze ❳ 🚀
+━━━━━━━━━━━━━━━
+╭── ✅ 𝗗𝗲́𝗯𝗮𝗻𝗶 𝗔𝘃𝗲𝗰 𝗦𝘂𝗰𝗲̀𝘀 ───
+│ 👤 ${userName}
+│ 🆔 ${target}
+│ ✨ Statut: Débanni
+╰──────────────────
+━━━━━━━ ✕ ━━━━━━`));
+	}
 
-			return api.sendMessage(getLang('unbannedSuccess', userName), event.threadID, event.messageID);
-		}
-		else if (args[0] == "check") {
-			if (!dataBanned.length)
-				return;
+	// VÉRIFIER + KICK
+		if (args[0] == "check") {
+			if (!dataBanned.length) return message.reply(getLang('noData'));
+			if (!adminIDs.includes(botID)) return message.reply(getLang('needAdmin'));
+			
+			let kicked = 0;
 			for (const user of dataBanned) {
-				if (event.participantIDs.includes(user.id))
-					api.removeUserFromGroup(user.id, event.threadID);
+				if (event.participantIDs.includes(user.id)) {
+					await api.removeUserFromGroup(user.id, threadID);
+					kicked++;
+				}
 			}
-		}
+			return message.reply(frame(`🚀 ❲ Minato Namikaze ❳ 🚀
+╭── 🧹 𝗩𝗲́𝗿𝗶𝗳𝗶𝗰𝗮𝘁𝗶𝗼𝗻 𝗧𝗲𝗿𝗺𝗶𝗻𝗲́𝗲 ───
+│ 🚫 ${kicked} utilisateur(s) expulsé(s)
+╰──────────────────`));
+	}
+
+	// LISTE
+		if (args[0] == 'list') {
+			if (!dataBanned.length) return message.reply(frame(`🚀 ❲ Minato Namikaze ❳ 🚀
+╭── 📑 𝗟𝗶𝘀𝘁𝗲 𝗩𝗶𝗱𝗲 ───
+│ ${getLang('noData')}
+╰──────────────────`));
+
+			const limit = 10;
+			const page = parseInt(args[1]) || 1;
+			const totalPage = Math.ceil(dataBanned.length / limit);
+			if (page < 1 || page > totalPage) return message.reply(getLang('invalidPage'));
+			
+			const start = (page - 1) * limit;
+			const data = dataBanned.slice(start, start + limit);
+			
+			let msg = `🚀 ❲ Minato Namikaze ❳ 🚀
+━━━━━━━━━━━━━━━
+╭── 🚫 𝗟𝗶𝘀𝘁𝗲 𝗗𝗲𝘀 𝗕𝗮𝗻𝗶𝘀 ───\n`;
+			
+			let count = 0;
+			for (const user of data) {
+				count++;
+				const name = members.find(m => m.userID == user.id)?.name || await usersData.getName(user.id) || getLang('noName');
+				msg += `│ ${start + count}. ${name}\n│ 🆔 ${user.id}\n│ 📝 ${user.reason}\n│ ⏰ ${user.time}\n│\n`;
+			}
+			
+			msg += `│ ${getLang('listBanned', page, totalPage)}\n╰──────────────────
+━━━━━━━ ✕ ━━━━━━`;
+			
+			return message.reply(frame(msg));
+	}
+
+	// BAN
+		let target;
+		let reason;
 
 		if (event.messageReply?.senderID) {
 			target = event.messageReply.senderID;
 			reason = args.join(' ');
-		}
+	}
 		else if (Object.keys(event.mentions || {}).length) {
 			target = Object.keys(event.mentions)[0];
-			reason = args.join(' ').replace(event.mentions[target], '');
-		}
+			reason = args.slice(1).join(' ');
+	}
 		else if (!isNaN(args[0])) {
 			target = args[0];
 			reason = args.slice(1).join(' ');
-		}
+	}
 		else if (args[0]?.startsWith('https')) {
 			target = await findUid(args[0]);
 			reason = args.slice(1).join(' ');
-		}
-		else if (args[0] == 'list') {
-			if (!dataBanned.length)
-				return message.reply(getLang('noData'));
-			const limit = 20;
-			const page = parseInt(args[1] || 1) || 1;
-			const start = (page - 1) * limit;
-			const end = page * limit;
-			const data = dataBanned.slice(start, end);
-			let msg = '';
-			let count = 0;
-			for (const user of data) {
-				count++;
-				const name = members[user.id]?.name || await usersData.getName(user.id) || getLang('noName');
-				const time = user.time;
-				msg += getLang('content', start + count, name, user.id, user.reason, time);
-			}
-			return message.reply(getLang('listBanned', page, Math.ceil(dataBanned.length / limit)) + '\n\n' + msg);
-		}
+	}
 
-		if (!target)
-			return message.reply(getLang('notFoundTarget'));
-		if (target == senderID)
-			return message.reply(getLang('cantSelfBan'));
-		if (adminIDs.includes(target))
-			return message.reply(getLang('cantBanAdmin'));
+		if (!target) return message.reply(frame(`🚀 ❲ Minato Namikaze ❳ 🚀
+╭── ⚠️ 𝗘𝗿𝗲𝘂𝗿 ───
+│ ${getLang('notFoundTarget')}
+╰──────────────────`));
+		
+		if (target == senderID) return message.reply(getLang('cantSelfBan'));
+		if (adminIDs.includes(target)) return message.reply(getLang('cantBanAdmin'));
+		if (dataBanned.find(item => item.id == target)) return message.reply(getLang('existedBan'));
 
-		const banned = dataBanned.find(item => item.id == target);
-		if (banned)
-			return message.reply(getLang('existedBan'));
-
-		const name = members[target]?.name || (await usersData.getName(target)) || getLang('noName');
-		const time = moment().tz(global.GoatBot.config.timeZone).format('HH:mm:ss DD/MM/YYYY');
+		const name = members.find(m => m.userID == target)?.name || await usersData.getName(target) || getLang('noName');
 		const data = {
 			id: target,
-			time,
+			time: timeNow,
 			reason: reason || getLang('noReason')
-		};
+	};
 
 		dataBanned.push(data);
-		await threadsData.set(event.threadID, dataBanned, 'data.banned_ban');
-		message.reply(getLang('bannedSuccess', name), () => {
+		await threadsData.set(threadID, dataBanned, 'data.banned_ban');
+
+		message.reply(frame(`🚀 ❲ Minato Namikaze ❳ 🚀
+━━━━━━━━━━━━━━━
+╭── 🚫 𝗕𝗮𝗻 𝗔𝗽𝗹𝗶𝗾𝘂𝗲́ ───
+│ 👤 ${name}
+│ 🆔 ${target}
+│ 📝 Raison: ${data.reason}
+│ ⏰ ${timeNow}
+╰──────────────────
+━━━━━━━ ✕ ━━━━━━`), () => {
 			if (members.some(item => item.userID == target)) {
-				if (adminIDs.includes(api.getCurrentUserID())) {
+				if (adminIDs.includes(botID)) {
 					if (event.participantIDs.includes(target))
-						api.removeUserFromGroup(target, event.threadID);
-				}
-				else {
-					message.send(getLang('needAdmin'), (err, info) => {
+						api.removeUserFromGroup(target, threadID);
+				} else {
+					api.sendMessage(getLang('needAdmin'), threadID, (err, info) => {
 						global.GoatBot.onEvent.push({
 							messageID: info.messageID,
 							onStart: ({ event }) => {
 								if (event.logMessageType === "log:thread-admins" && event.logMessageData.ADMIN_EVENT == "add_admin") {
 									const { TARGET_ID } = event.logMessageData;
-									if (TARGET_ID == api.getCurrentUserID()) {
-										api.removeUserFromGroup(target, event.threadID, () => global.GoatBot.onEvent = global.GoatBot.onEvent.filter(item => item.messageID != info.messageID));
+									if (TARGET_ID == botID) {
+										api.removeUserFromGroup(target, threadID);
+										global.GoatBot.onEvent = global.GoatBot.onEvent.filter(item => item.messageID!= info.messageID);
 									}
 								}
 							}
@@ -181,41 +240,31 @@ module.exports = {
 					});
 				}
 			}
-		});
+	});
 	},
 
 	onEvent: async function ({ event, api, threadsData, getLang, message }) {
 		if (event.logMessageType == "log:subscribe") {
 			const { threadID } = event;
-			const dataBanned = await threadsData.get(threadID, 'data.banned_ban', []);
-			const usersAdded = event.logMessageData.addedParticipants;
+			const dataBanned = await threadsData.get(threadID, 'data.banned_ban') || [];
+			const botID = api.getCurrentUserID();
+			const { adminIDs } = await threadsData.get(threadID);
 
-			for (const user of usersAdded) {
-				const { userFbId, fullName } = user;
-				const banned = dataBanned.find(item => item.id == userFbId);
+			for (const user of event.logMessageData.addedParticipants) {
+				const banned = dataBanned.find(item => item.id == user.userFbId);
 				if (banned) {
-					const reason = banned.reason || getLang('noReason');
-					const time = banned.time;
-					return api.removeUserFromGroup(userFbId, threadID, err => {
-						if (err)
-							return message.send(getLang('needAdminToKick', fullName, userFbId), (err, info) => {
-								global.GoatBot.onEvent.push({
-									messageID: info.messageID,
-									onStart: ({ event }) => {
-										if (event.logMessageType === "log:thread-admins" && event.logMessageData.ADMIN_EVENT == "add_admin") {
-											const { TARGET_ID } = event.logMessageData;
-											if (TARGET_ID == api.getCurrentUserID()) {
-												api.removeUserFromGroup(userFbId, event.threadID, () => global.GoatBot.onEvent = global.GoatBot.onEvent.filter(item => item.messageID != info.messageID));
-											}
-										}
-									}
-								});
-							});
-						else
-							message.send(getLang('bannedKick', fullName, userFbId, reason, time));
+					if (!adminIDs.includes(botID)) {
+						return api.sendMessage(getLang('needAdminToKick', user.fullName, user.userFbId), threadID);
+					}
+					api.removeUserFromGroup(user.userFbId, threadID, err => {
+						if (err) {
+							api.sendMessage(getLang('needAdminToKick', user.fullName, user.userFbId), threadID);
+						} else {
+							api.sendMessage(getLang('bannedKick', user.fullName, user.userFbId, banned.reason, banned.time), threadID);
+						}
 					});
 				}
 			}
-		}
+	}
 	}
 };
