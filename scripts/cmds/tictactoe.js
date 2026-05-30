@@ -12,7 +12,7 @@ const STATS_FILE = path.join(__dirname, "tictactoe_stats.json");
 const ASSETS_DIR = path.join(__dirname, "tictactoe_assets");
 
 const BOT_UID  = global.botID;
-const BOT_NAME = "Hedgehog GPT";
+const BOT_NAME = "Minato Namikaze";
 
 let games        = {};
 let tournaments  = {};
