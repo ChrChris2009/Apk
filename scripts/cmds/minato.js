@@ -1,220 +1,211 @@
 const axios = require("axios");
+const fs = require("fs");
+const path = require("path");
+const googleTTS = require("google-tts-api");
 
-const botName = "Minato Namikaze";
+// 📦 MEMORY
+const DB_FILE = path.join(__dirname, "minato_memory.json");
+
+// 🧠 MEMORY 4 DAYS
+const MEMORY_DAYS = 4;
+const MEMORY_TIME = MEMORY_DAYS * 24 * 60 * 60 * 1000;
+
+// 💾 LOAD DB
+function loadDB() {
+  try {
+    if (!fs.existsSync(DB_FILE)) return {};
+    const data = fs.readFileSync(DB_FILE, "utf-8");
+    return data ? JSON.parse(data) : {};
+  } catch {
+    return {};
+  }
+}
+
+// 💾 SAVE DB
+function saveDB(db) {
+  fs.writeFileSync(DB_FILE, JSON.stringify(db, null, 2));
+}
+
+// 🧠 MEMORY
+function getMem(id) {
+  const db = loadDB();
+
+  if (!db[id]) {
+    db[id] = {
+      name: null,
+      mood: "⚪ normal",
+      messages: 0,
+      uid: id,
+      history: [],
+      lastSeen: Date.now()
+    };
+  }
+
+  if (!Array.isArray(db[id].history)) db[id].history = [];
+
+  return db[id];
+}
+
+function setMem(id, data) {
+  const db = loadDB();
+  db[id] = data;
+  saveDB(db);
+}
+
+// 🕒 TIME
+function getTime() {
+  return new Date().toLocaleString("fr-FR", {
+    timeZone: "Africa/Kinshasa"
+  });
+}
+
+// 🎨 IMAGE
+function imagine(prompt) {
+  return `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}`;
+}
+
+// 🧹 CLEAN TEXT (AMÉLIORÉ)
+function cleanText(text) {
+  return (text || "")
+    .replace(/🎀|✨|🌸/g, "")
+    .replace(/SHIZU|Aryan|chaucha/gi, "")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
+// 🚀 MINATO FRAME STYLE
+function frame(text) {
+  return `
+🚀 ❲ 𝗠𝗜𝗡𝗔𝗧𝗢 𝗔𝗜 ❳ 🚀
+━━━━━━━━━━━━━━━━━━
+${text}
+━━━━━━━━━━━━━━━━━━
+⚡ Powered by Minato System
+`;
+}
+
+// 🤖 AI CORE
+async function askAI(prompt, mem, uid) {
+  const fullPrompt = `
+Tu es MINATO AI 🤖
+
+Règles:
+- Réponds naturellement
+- Pas de titre inutile
+- Pas de répétition
+- Réponds dans la langue de l'utilisateur
+- Réponses claires et utiles
+- Utilise emoji si nécessaire
+- Ne parle jamais de créateurs inconnus
+- Style calme et intelligent
+
+Utilisateur: ${mem.name || "inconnu"}
+Heure: ${getTime()}
+Humeur: ${mem.mood}
+
+Message:
+${prompt}
+`;
+
+  try {
+    const res = await axios.post(
+      "https://shizuai.vercel.app/chat",
+      {
+        uid,
+        message: fullPrompt
+      },
+      { timeout: 15000 }
+    );
+
+    return res.data?.reply || res.data?.message || "Minato actif ⚡";
+  } catch {
+    return "Minato actif ⚡";
+  }
+}
 
 module.exports = {
   config: {
     name: "minato",
-    version: "3.0.0",
-    author: "Delfa",
+    version: "11.0.0",
     role: 0,
-    shortDescription: "IA Minato Namikaze",
-    longDescription: "IA intelligente, personnalisée et stylée",
-    category: "minato",
-    guide: "minato <question> ou .minato <question>",
-    countDown: 5
+    category: "ai"
   },
 
-  onStart: async function (args) {
-    return this.handleAI(args);
-  },
+  onStart: async function () {},
 
-  onChat: async function (args) {
-
-    const { event, api, message } = args;
-
+  onChat: async function ({ event, message }) {
     if (!event.body) return;
 
-    const content = event.body.trim().toLowerCase();
+    const body = event.body.trim();
 
-    const isMentioned =
-      event.mentions?.[api.getCurrentUserID()];
+    // activation
+    if (!body.toLowerCase().startsWith("minato")) return;
 
-    // 🔒 Anti-spam groupe
-    if (
-      event.isGroup &&
-      !isMentioned &&
-      !content.startsWith("minato") &&
-      !content.startsWith(".minato")
-    ) return;
+    const input = body.slice(6).trim();
+    if (!input) return;
 
-    // ✅ Si "minato" seul
-    if (content === "minato" || content === ".minato") {
+    const uid = event.senderID;
+    let mem = getMem(uid);
 
-      return message.reply(
-`🚀 ❲ ${botName} ❳ 🚀
-━━━━━━━━━━━━━━━
-╭── 🤖 𝗜𝗔 𝗔𝗰𝘁𝗶𝘃𝗲 ───
-│ 💬 Pose-moi une
-│ question et je vais
-│ te répondre.
-│
-│ ✨ Exemple :
-│ minato Comment coder ?
-╰──────────────────
-━━━━━━━ ✕ ━━━━━━`
-      );
-    }
+    mem.messages++;
+    mem.lastSeen = Date.now();
 
-    // ✅ Si "ai question"
-    if (
-      content.startsWith("minato ") ||
-      content.startsWith("@minato ")
-    ) {
+    // mood system
+    if (/triste|sad/i.test(input)) mem.mood = "😢 sad";
+    else if (/merci|thanks/i.test(input)) mem.mood = "😊 happy";
+    else if (/blague|joke/i.test(input)) mem.mood = "😂 funny";
+    else mem.mood = "⚪ normal";
 
-      const splitBody = event.body.split(" ");
+    const now = Date.now();
 
-      splitBody.shift();
+    mem.history.push({ text: input, time: now });
+    mem.history = mem.history.filter(h => now - h.time <= MEMORY_TIME);
+    if (mem.history.length > 50) mem.history.shift();
 
-      args.args = splitBody;
-
-      return this.handleAI(args);
-    }
-  },
-
-  handleAI: async function ({ args, message }) {
-
-    const userQuestion = args.join(" ");
-
-    if (!userQuestion) {
-
-      return message.reply(
-`🚀 ❲ ${botName} ❳ 🚀
-━━━━━━━━━━━━━━━
-╭── ⚠️ 𝗤𝘂𝗲𝘀𝘁𝗶𝗼𝗻 𝗠𝗮𝗻𝗾𝘂𝗮𝗻𝘁𝗲 ───
-│ 💬 Veuillez écrire
-│ une question pour
-│ utiliser minato.
-│
-│ ✨ Exemple :
-│ minato Explique JavaScript
-╰──────────────────
-━━━━━━━ ✕ ━━━━━━`
-      );
-    }
+    setMem(uid, mem);
 
     try {
 
-      // 🧠 SYSTEM PROMPT
-      const systemPrompt = `
-Tu t'appelles ${botName}.
-Tu es une intelligence artificielle avancée.
+      // 🎨 IMAGE
+      if (input.toLowerCase().startsWith("imagine ")) {
+        const prompt = input.slice(8);
 
-━━━━━━━━━━━━━━━━━━
-🧠 COMPORTEMENT
-━━━━━━━━━━━━━━━━━━
-- Tu es intelligente, utile et claire.
-- Tu comprends bien les questions avant de répondre.
-- Tu expliques simplement ou en détail selon le besoin.
-
-━━━━━━━━━━━━━━━━━━
-⚠️ IDENTITÉ
-━━━━━━━━━━━━━━━━━━
-- Ton nom est ${botName}.
-- Ne parle pas inutilement de ton créateur.
-
-━━━━━━━━━━━━━━━━━━
-🎯 QUALITÉ
-━━━━━━━━━━━━━━━━━━
-- Réponses précises
-- Réponses utiles
-- Exemples si nécessaire
-- Aide clairement l'utilisateur
-
-━━━━━━━━━━━━━━━━━━
-💬 STYLE
-━━━━━━━━━━━━━━━━━━
-- Style aesthetic ✨
-- Naturel et fluide
-
-━━━━━━━━━━━━━━━━━━
-🚫 INTERDIT
-━━━━━━━━━━━━━━━━━━
-- Pas de spam
-- Pas de contenu dangereux
-`;
-
-      const fullPrompt =
-`${systemPrompt}
-
-Question : ${userQuestion}`;
-
-      const waitMsg =
-`🚀 ❲ ${botName} ❳ 🚀
-━━━━━━━━━━━━━━━
-╭── ⏳ 𝗣𝗮𝘁𝗶𝗲𝗻𝘁𝗲𝘇 ───
-│ 🤖 ${botName}
-│ réfléchit à votre
-│ question...
-╰──────────────────
-━━━━━━━ ✕ ━━━━━━`;
-
-      await message.reply(waitMsg);
-
-      const response = await axios.get(
-        "https://delfaapiai.vercel.app/ai/chatgptfree",
-        {
-          params: {
-            prompt: fullPrompt,
-            model: "chatgpt4"
-          }
-        }
-      );
-
-      const output =
-        response.data.answer ||
-        response.data.reply ||
-        response.data.result ||
-        response.data.message;
-
-      if (output) {
-
-        return message.reply(
-`🚀 ❲ ${botName} ❳ 🚀
-━━━━━━━━━━━━━━━
-╭── 🤖 𝗥𝗲́𝗽𝗼𝗻𝘀𝗲 𝗜𝗔 ───
-│ ✨ ${botName}
-│ a répondu à votre
-│ question.
-╰──────────────────
-
-${output}
-
-━━━━━━━ ✕ ━━━━━━`
-        );
+        return message.reply({
+          body: frame(`🎨 ${prompt}`),
+          attachment: await axios.get(imagine(prompt), {
+            responseType: "stream"
+          }).then(r => r.data)
+        });
       }
 
-      else {
+      // 🔊 TTS
+      if (/^(parle|dis|say)\s+/i.test(input)) {
+        const textToSpeak = input.replace(/^(parle|dis|say)\s+/i, "").trim();
 
-        return message.reply(
-`🚀 ❲ ${botName} ❳ 🚀
-━━━━━━━━━━━━━━━
-╭── ⚠️ 𝗔𝘂𝗰𝘂𝗻𝗲 𝗥𝗲́𝗽𝗼𝗻𝘀𝗲 ───
-│ 😶 Impossible
-│ d'obtenir une
-│ réponse actuellement.
-╰──────────────────
-━━━━━━━ ✕ ━━━━━━`
-        );
+        const url = googleTTS.getAudioUrl(textToSpeak, {
+          lang: "fr",
+          slow: false
+        });
+
+        const res = await axios.get(url, { responseType: "arraybuffer" });
+        const file = path.join(__dirname, "minato.mp3");
+
+        fs.writeFileSync(file, Buffer.from(res.data));
+
+        return message.reply({
+          body: frame(textToSpeak),
+          attachment: fs.createReadStream(file)
+        }, () => fs.unlinkSync(file));
       }
 
-    }
+      // 🤖 AI
+      const reply = await askAI(input, mem, uid);
+      const clean = cleanText(reply);
 
-    catch (error) {
+      return message.reply(frame(clean));
 
-      console.error("Erreur API:", error);
-
-      return message.reply(
-`🚀 ❲ ${botName} ❳ 🚀
-━━━━━━━━━━━━━━━
-╭── ❌ 𝗘𝗿𝗿𝗲𝘂𝗿 𝗔𝗣𝗜 ───
-│ ☁️ Une erreur est
-│ survenue avec l'API.
-│
-│ 🔄 Réessayez plus tard.
-╰──────────────────
-━━━━━━━ ✕ ━━━━━━`
-      );
+    } catch {
+      return message.reply(frame("Minato actif ⚡"));
     }
   }
 };
