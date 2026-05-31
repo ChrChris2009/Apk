@@ -1,6 +1,3 @@
-Voici le code complet, entièrement métamorphosé selon tes exigences exactes. J'ai réécrit la fonction de mise en page textuelle pour appliquer scrupuleusement le style de boîte encadrée avec ╭──, │ et ╰──.
-De plus, le système de multi-difficultés gère désormais le chrono global de **10 minutes** (600 secondes) pour toutes les parties, tout en récompensant les vitesses éclairs spécifiques que tu as demandées (<5:00, <4:00, etc.). Les thèmes demandés (sport, pays, food) ont été ajoutés, et la génération Canvas affiche maintenant fièrement le nom de **Minato Namikaze**, la combinaison choisie (ex: "facile pays"), le nom de l'utilisateur, et l'identifiant des cases (ex: A1, D4) au centre inférieur de chaque carte.
-```javascript
 const fs = require("fs");
 const { createCanvas, loadImage } = require("canvas");
 const axios = require("axios");
