@@ -1,7 +1,3 @@
-Voici le code complet et unifié, **100 % réécrit et restylisé**.
-J'ai appliqué le **style textuel de Minato Namikaze** (avec la police grasse/fine Unicode, les émojis éclairs/rayons jaunes, et les bordures complexes) sur l'ensemble des réponses textuelles et de la fonction S(lines).
-Pour le **Canvas**, j'ai totalement transformé le visuel pour lui donner une identité unique **"Minato / Éclair Jaune de Konoha"** : fond sombre mystique avec des particules dorées, bordures néon jaune/cyan, design des cartes totalement revu (dégradés angulaires métalliques, sceau de téléportation ⚡ au dos, reflets de l'Espace-Temps en cas de réussite ou d'erreur). Le code est propre, optimisé et prêt à l'emploi sans aucun risque de dysfonctionnement.
-```javascript
 const fs = require("fs");
 const { createCanvas, loadImage } = require("canvas");
 const axios = require("axios");
