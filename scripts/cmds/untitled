@@ -1,0 +1,921 @@
+Voici le code complet, entièrement métamorphosé selon tes exigences exactes. J'ai réécrit la fonction de mise en page textuelle pour appliquer scrupuleusement le style de boîte encadrée avec ╭──, │ et ╰──.
+De plus, le système de multi-difficultés gère désormais le chrono global de **10 minutes** (600 secondes) pour toutes les parties, tout en récompensant les vitesses éclairs spécifiques que tu as demandées (<5:00, <4:00, etc.). Les thèmes demandés (sport, pays, food) ont été ajoutés, et la génération Canvas affiche maintenant fièrement le nom de **Minato Namikaze**, la combinaison choisie (ex: "facile pays"), le nom de l'utilisateur, et l'identifiant des cases (ex: A1, D4) au centre inférieur de chaque carte.
+```javascript
+const fs = require("fs");
+const { createCanvas, loadImage } = require("canvas");
+const axios = require("axios");
+
+const CASH_URL   = "https://cash-api-five.vercel.app/api/cash";
+const FORMAT_URL = "https://numbers-conversion.vercel.app/api/format";
+
+const MAX_LIMIT = 10n ** 261n;
+
+function toBigInt(v) {
+    if (typeof v === "bigint") return v;
+    if (v === undefined || v === null) return 0n;
+    try { return BigInt(String(v).split(".")[0].replace(/[^0-9-]/g, "") || "0"); }
+    catch { return 0n; }
+}
+
+async function formatNumber(num) {
+    const big = toBigInt(num);
+    if (big === 0n) return "0";  
+    if (big >= MAX_LIMIT || big <= -MAX_LIMIT) return "∞";  
+      
+    try {  
+        const r = await axios.get(`${FORMAT_URL}?n=${big.toString()}`, { timeout: 5000 });  
+        if (r.data?.success) {  
+            if (r.data.isInfinity) return "∞";  
+            return r.data.formatted;  
+        }  
+    } catch {}  
+      
+    const suffixes = [  
+        "", "k", "M", "B", "T", "Qa", "Qi", "Sx", "Sp", "Oc", "No",   
+        "Dc", "UDc", "DDc", "TDc", "QaDc", "QiDc", "SxDc", "SpDc",   
+        "OcDc", "NoDc", "kN", "MN", "BN", "TN", "QaN", "QiN", "SxN",   
+        "SpN", "OcN", "NoN", "DcN", "UI", "DI", "TI", "QI", "QiI",   
+        "SxI", "SpI", "OcI", "NoI", "DcI", "UV", "DV", "TV", "QV",   
+        "QiV", "SxV", "SpV", "OcV", "NoV", "DcV", "UT", "DT", "TT",   
+        "QT", "QiT", "SxT", "SpT", "OcT", "NoT", "DcT", "UTr", "DTr",   
+        "TTr", "QTr", "QiTr", "SxTr", "SpTr", "OcTr", "NoTr", "DcTr",   
+        "UQ", "DQ", "TQ", "QQ", "QiQ", "SxQ", "SpQ", "OcQ", "NoQ",   
+        "DcQ", "Uc", "Du", "Tu", "Qu", "Qiu"  
+    ];  
+      
+    let scaled = big;  
+    let suffixIndex = 0;  
+    const thousand = 1000n;  
+      
+    while (scaled >= thousand && suffixIndex < suffixes.length - 1) {  
+        scaled = scaled / thousand;  
+        suffixIndex++;  
+    }  
+      
+    if (suffixIndex === suffixes.length - 1 && scaled >= thousand) return "∞";  
+      
+    const divisor = thousand ** BigInt(suffixIndex);  
+    const remainder = (big % divisor) * 100n / divisor;  
+      
+    if (suffixIndex > 0 && remainder > 0n) {  
+        const decStr = remainder.toString().padStart(2, '0').slice(0, 2).replace(/0+$/, '');  
+        return decStr ? `${scaled}.${decStr}${suffixes[suffixIndex]}` : `${scaled}${suffixes[suffixIndex]}`;  
+    }  
+      
+    if (suffixIndex === 0) {  
+        return big.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ");  
+    }  
+      
+    return `${scaled}${suffixes[suffixIndex]}`;
+}
+
+const SFX = {
+    k: 1_000n, m: 1_000_000n, b: 1_000_000_000n, t: 1_000_000_000_000n,
+    qa: 10n**15n, qi: 10n**18n, sx: 10n**21n, sp: 10n**24n, oc: 10n**27n, no: 10n**30n,
+    dc: 10n**33n, udc: 10n**36n, ddc: 10n**39n, tdc: 10n**42n, qadc: 10n**45n, qidc: 10n**48n,
+    sxdc: 10n**51n, spdc: 10n**54n, ocdc: 10n**57n, nodc: 10n**60n, kn: 10n**63n, mn: 10n**66n,
+    bn: 10n**69n, tn: 10n**72n, qan: 10n**75n, qin: 10n**78n, sxn: 10n**81n, spn: 10n**84n,
+    ocn: 10n**87n, non: 10n**90n, dcn: 10n**93n, ui: 10n**96n, di: 10n**99n, ti: 10n**102n,
+    qi_i: 10n**105n, qii: 10n**108n, sxi: 10n**111n, spi: 10n**114n, oci: 10n**117n, noi: 10n**120n,
+    dci: 10n**123n, uv: 10n**126n, dv: 10n**129n, tv: 10n**132n, qv: 10n**135n, qiv: 10n**138n,
+    sxv: 10n**141n, spv: 10n**144n, ocv: 10n**147n, nov: 10n**150n, dcv: 10n**153n, ut: 10n**156n,
+    dt: 10n**159n, tt: 10n**162n, qt: 10n**165n, qit: 10n**168n, sxt: 10n**171n, spt: 10n**174n,
+    oct: 10n**177n, not: 10n**180n, dct: 10n**183n, utr: 10n**186n, dtr: 10n**189n, ttr: 10n**192n,
+    qtr: 10n**195n, qitr: 10n**198n, sxtr: 10n**201n, sptr: 10n**204n, octr: 10n**207n, notr: 10n**210n,
+    dctr: 10n**213n, uq: 10n**216n, dq: 10n**219n, tq: 10n**222n, qq: 10n**225n, qiq: 10n**228n,
+    sxq: 10n**231n, spq: 10n**234n, ocq: 10n**237n, noq: 10n**240n, dcq: 10n**243n, uc: 10n**246n,
+    du: 10n**249n, tu: 10n**252n, qu: 10n**255n, qiu: 10n**258n
+};
+
+async function parseAmount(input) {
+    if (!input) return 0n;
+    const str = String(input).toLowerCase().trim();
+
+    try {  
+        const r = await axios.get(`${FORMAT_URL}?n=${encodeURIComponent(str)}`, { timeout: 5000 });  
+        if (r.data?.success && r.data?.raw) return toBigInt(r.data.raw);  
+    } catch {}  
+      
+    const m = str.match(/^(-?\d+(?:\.\d+)?)([a-zA-Z]+)?$/i);  
+    if (!m) return 0n;  
+      
+    const val = parseFloat(m[1]);  
+    const sfx = (m[2] || "").toLowerCase();  
+    const base = BigInt(Math.floor(Math.abs(val)));  
+    const neg = val < 0;  
+      
+    if (isNaN(val)) return 0n;  
+    if (!sfx) return neg ? -base : base;  
+      
+    const mult = SFX[sfx];  
+    if (mult) {  
+        const result = base * mult;  
+        if (result >= MAX_LIMIT) return neg ? -MAX_LIMIT : MAX_LIMIT;  
+        return neg ? -result : result;  
+    }  
+      
+    return neg ? -base : base;
+}
+
+async function getUserCash(uid) {
+    try {
+        const r = await axios.get(`${CASH_URL}/${uid}`, { timeout: 10000 });
+        if (r.data?.success && r.data?.data) {
+            const cash = toBigInt(r.data.data.cash);
+            return cash >= MAX_LIMIT ? MAX_LIMIT : cash;
+        }
+    } catch {}
+    return 0n;
+}
+
+async function updateUserCash(uid, amount) {
+    const a = toBigInt(amount);
+    try {
+        if (a > 0n) {
+            await axios.post(`${CASH_URL}/${uid}/add`, { amount: a.toString() });
+        } else if (a < 0n) {
+            await axios.post(`${CASH_URL}/${uid}/subtract`, { amount: (-a).toString() });
+        }
+        return true;
+    } catch (e) {
+        console.error("Cash update:", e.message);
+        return false;
+    }
+}
+
+function getUserName(uid, api) {
+    return new Promise(resolve => {
+        api.getUserInfo(uid, (err, data) => {
+            const n = data?.[uid]?.name;
+            resolve((n && n !== "Facebook User") ? n : `User_${String(uid).slice(-5)}`);
+        });
+    });
+}
+
+async function getUserAvatar(uid, api) {
+    try {
+        const d = await api.getUserInfo(uid);
+        return d[uid]?.thumbSrc || `https://graph.facebook.com/${uid}/picture?width=200&height=200`;
+    } catch { return `https://graph.facebook.com/${uid}/picture?width=200&height=200`; }
+}
+
+const GAME_FILE = "./memory_games.json";
+let activeGames = new Map();
+if (fs.existsSync(GAME_FILE)) {
+    try {
+        const raw = JSON.parse(fs.readFileSync(GAME_FILE, "utf8"));
+        for (const [k, v] of Object.entries(raw)) {
+            v.bet = BigInt(v.bet);
+            activeGames.set(k, v);
+        }
+    } catch {}
+}
+
+function saveGames() {
+    try {
+        const obj = {};
+        for (const [k, v] of activeGames) {
+            obj[k] = { ...v, bet: v.bet.toString() };
+        }
+        fs.writeFileSync(GAME_FILE, JSON.stringify(obj, null, 2));
+    } catch {}
+}
+
+const DIFFICULTIES = {
+    facile:   { grid: 4, pairs: 8,  timeLimit: 600, multiplier: 2,  bonusSpeed: 300, bonusMult: 3 },
+    normal:   { grid: 4, pairs: 8,  timeLimit: 600, multiplier: 3,  bonusSpeed: 240, bonusMult: 5 },
+    difficile:{ grid: 5, pairs: 10, timeLimit: 600, multiplier: 5,  bonusSpeed: 180, bonusMult: 8 },
+    extreme:  { grid: 6, pairs: 12, timeLimit: 600, multiplier: 8,  bonusSpeed: 120, bonusMult: 15 },
+};
+
+const CARD_THEMES = {
+    animaux:  ["🐶","🐱","🐭","🐹","🐰","🦊","🐻","🐼","🐨","🐯","🦁","🐮"],
+    fruits:   ["🍎","🍊","🍋","🍇","🍓","🫐","🍑","🍒","🥭","🍍","🥝","🍈"],
+    espace:   ["🌍","🌙","⭐","☀️","🪐","🌠","🌌","🚀","🛸","🌟","💫","🌑"],
+    casino:   ["🎰","🎲","🃏","🎴","🀄","🎯","🎳","🎮","🕹️","🎱","🎭","🎪"],
+    nature:   ["🌸","🌺","🌻","🌹","🌷","🍀","🌿","🍃","🌱","🌾","🍂","🍁"],
+    sport:    ["⚽","🏀","🏈","⚾","🥎","🎾","🏐","🏉","🥏","🏓","🏸","🏒"],
+    pays:     ["🇨🇵","🇺🇸","🇯🇵","🇨🇳","🇩🇪","🇬🇧","🇮🇹","🇨🇦","🇷🇺","🇧🇷","🇪🇸","🇰🇷"],
+    food:     ["🍕","🍔","🍟","🌭","🍿","🥓","🥞","🧇","🍳","🌮","🍣","🍙"]
+};
+
+function createBoard(difficulty, theme) {
+    const diff = DIFFICULTIES[difficulty];
+    const symbols = CARD_THEMES[theme] || CARD_THEMES.animaux;
+    const selectedSymbols = symbols.slice(0, diff.pairs);
+    const allCards = [...selectedSymbols, ...selectedSymbols];
+    for (let i = allCards.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [allCards[i], allCards[j]] = [allCards[j], allCards[i]];
+    }
+    return allCards;
+}
+
+function parseCoord(input, cols, rows) {
+    if (!input) return null;
+    const str = String(input).toUpperCase().trim();
+    const m = str.match(/^([A-Z])(\d+)$/);
+    if (!m) return null;
+    const col = m[1].charCodeAt(0) - 65;
+    const row = parseInt(m[2]) - 1;
+    if (col < 0 || col >= cols || row < 0 || row >= rows) return null;
+    return { row, col, index: row * cols + col };
+}
+
+function roundRect(ctx, x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.lineTo(x + w - r, y);
+    ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+    ctx.lineTo(x + w, y + h - r);
+    ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+    ctx.lineTo(x + r, y + h);
+    ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+    ctx.lineTo(x, y + r);
+    ctx.quadraticCurveTo(x, y, x + r, y);
+    ctx.closePath();
+}
+
+function S(title, lines, username = "Minato") {
+    let out = "🚀 ❲ 𝗦𝗲𝗻𝘁 𝗦𝘂𝗰𝗰𝗲𝘀𝘀𝗳𝘂𝗹𝗹𝘆 ❳ 🚀\n━━━━━━━━━━━━━━━\n";
+    out += `╭── ${title} ───\n`;
+    out += `│ 👤 ${username}\n│\n`;
+    for (const l of lines) {
+        if (l === "---") {
+            out += "│\n";
+            continue;
+        }
+        out += `│ ${l}\n`;
+    }
+    out += "╰──────────────────\n━━━━━━━ ✕ ━━━━━━";
+    return out;
+}
+
+// ========================================================
+// 🎨 CANVA DE LA GRILLE MIS À JOUR (STYLE MINATO EXCLUSIF)
+// ========================================================
+async function generateBoardImage({ game, username, avatarUrl, lastFlipped, lastMatch, lastMiss, phase }) {
+    const diff   = DIFFICULTIES[game.difficulty];
+    const cols   = game.cols;
+    const rows   = Math.ceil(game.board.length / cols);
+    const CELL   = 88;
+    const GUTTER = 12;
+    const PAD_L  = 62;
+    const PAD_T  = 165;
+    const W      = PAD_L + cols * (CELL + GUTTER) + 40;
+    const H      = PAD_T + rows * (CELL + GUTTER) + 125;
+    const canvas = createCanvas(W, H);
+    const ctx    = canvas.getContext("2d");
+
+    const bg = ctx.createRadialGradient(W / 2, H / 2, 50, W / 2, H / 2, W * 0.9);
+    bg.addColorStop(0, "#0e0d07");
+    bg.addColorStop(0.6, "#05060b");
+    bg.addColorStop(1, "#020204");
+    ctx.fillStyle = bg;
+    ctx.fillRect(0, 0, W, H);
+
+    ctx.fillStyle = "rgba(234, 179, 8, 0.04)";
+    for (let i = 0; i < 45; i++) {
+        ctx.fillRect(Math.random() * W, Math.random() * H, Math.random() * 3 + 1, Math.random() * 15 + 2);
+    }
+
+    const borderG = ctx.createLinearGradient(0, 0, W, H);
+    borderG.addColorStop(0, "#eab308");
+    borderG.addColorStop(0.3, "#06b6d4");
+    borderG.addColorStop(1, "#eab308");
+    ctx.strokeStyle = borderG;
+    ctx.lineWidth = 3;
+    roundRect(ctx, 10, 10, W - 20, H - 20, 16);
+    ctx.stroke();
+
+    const hdrG = ctx.createLinearGradient(0, 10, W, 10);
+    hdrG.addColorStop(0, "rgba(234,179,8,0.18)");
+    hdrG.addColorStop(0.5, "rgba(6,182,212,0.06)");
+    hdrG.addColorStop(1, "rgba(234,179,8,0.18)");
+    ctx.fillStyle = hdrG;
+    ctx.fillRect(11, 11, W - 22, 68);
+
+    ctx.font = "bold 21px 'Courier New'";
+    ctx.fillStyle = "#eab308";
+    ctx.fillText("⚡ MINATO NAMIKAZE", 30, 46);
+    ctx.font = "bold 11px 'Courier New'";
+    ctx.fillStyle = "rgba(6, 182, 212, 0.9)";
+    ctx.fillText(`${game.difficulty} ${game.theme}`, 32, 64);
+
+    const ax = W - 52, ay = 45;
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(ax, ay, 26, 0, Math.PI * 2);
+    ctx.clip();
+    try {
+        const avatar = await loadImage(avatarUrl);
+        ctx.drawImage(avatar, ax - 26, ay - 26, 52, 52);
+    } catch {
+        ctx.fillStyle = "#1e1b4b";
+        ctx.fill();
+    }
+    ctx.restore();
+    ctx.beginPath();
+    ctx.arc(ax, ay, 28, 0, Math.PI * 2);
+    ctx.strokeStyle = "#eab308";
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    const elapsed = Math.floor((Date.now() - game.startTime) / 1000);
+    const remaining = Math.max(0, diff.timeLimit - elapsed);
+    const statsY = 94;
+    const timeBarY = statsY + 34;
+    const timeBarW = W - 60;
+    
+    ctx.fillStyle = "rgba(255,255,255,0.04)";
+    roundRect(ctx, 30, timeBarY, timeBarW, 6, 3);
+    ctx.fill();
+    
+    const pct = remaining / diff.timeLimit;
+    const barColor = pct > 0.5 ? "#eab308" : pct > 0.25 ? "#f97316" : "#ef4444";
+    const barG = ctx.createLinearGradient(30, 0, 30 + timeBarW * pct, 0);
+    barG.addColorStop(0, barColor);
+    barG.addColorStop(1, "rgba(255,255,255,0.3)");
+    ctx.fillStyle = barG;
+    if (pct > 0) {
+        roundRect(ctx, 30, timeBarY, Math.max(timeBarW * pct, 6), 6, 3);
+        ctx.fill();
+    }
+
+    const timeColor = remaining <= 60 ? "#ef4444" : "#eab308";
+    const minStr = Math.floor(remaining / 60);
+    const secStr = String(remaining % 60).padStart(2, "0");
+
+    const statItems = [
+        { label: "𝖯𝖠𝖨𝖱𝖤𝖲",   value: `${game.matched}/${diff.pairs}` },
+        { label: "𝖤𝖲𝖲𝖠𝖨𝖲",   value: `${game.attempts}` },
+        { label: "𝖢𝖧𝖱𝖮𝖭𝖮",   value: `${minStr}:${secStr}`, color: timeColor },
+        { label: "𝖬𝖨𝖲𝖤",     value: `${game.betFormatted}$` }
+    ];
+    const sW = (W - 60) / statItems.length;
+    for (let i = 0; i < statItems.length; i++) {
+        const sx = 30 + i * sW;
+        ctx.fillStyle = "rgba(255,255,255,0.025)";
+        ctx.strokeStyle = "rgba(6,182,212,0.15)";
+        ctx.lineWidth = 1;
+        roundRect(ctx, sx + 3, statsY - 14, sW - 6, 40, 6);
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.font = "bold 8px 'Courier New'";
+        ctx.fillStyle = "rgba(255,255,255,0.4)";
+        ctx.fillText(statItems[i].label, sx + 10, statsY);
+        ctx.font = `bold ${statItems[i].value.length > 9 ? "11" : "13"}px 'Courier New'`;
+        ctx.fillStyle = statItems[i].color || "#ffffff";
+        ctx.fillText(statItems[i].value, sx + 10, statsY + 18);
+    }
+
+    ctx.font = "bold 12px 'Courier New'";
+    ctx.fillStyle = "rgba(234,179,8,0.5)";
+    for (let c = 0; c < cols; c++) {
+        const lx = PAD_L + c * (CELL + GUTTER) + CELL / 2;
+        ctx.textAlign = "center";
+        ctx.fillText(String.fromCharCode(65 + c), lx, PAD_T - 12);
+    }
+    for (let r = 0; r < rows; r++) {
+        const ry = PAD_T + r * (CELL + GUTTER) + CELL / 2 + 5;
+        ctx.textAlign = "right";
+        ctx.fillText(String(r + 1), PAD_L - 14, ry);
+    }
+    ctx.textAlign = "left";
+
+    for (let idx = 0; idx < game.board.length; idx++) {
+        const r  = Math.floor(idx / cols);
+        const c  = idx % cols;
+        const cx = PAD_L + c * (CELL + GUTTER);
+        const cy = PAD_T + r * (CELL + GUTTER);
+
+        const isMatched  = game.revealed[idx];
+        const isFlipped  = lastFlipped?.includes(idx);
+        const isMatchNow = lastMatch?.includes(idx);
+        const isMissNow  = lastMiss?.includes(idx);
+
+        let strokeColor, strokeW;
+        const cardG = ctx.createLinearGradient(cx, cy, cx + CELL, cy + CELL);
+
+        if (isMatched) {
+            cardG.addColorStop(0, "#062419");
+            cardG.addColorStop(1, "#020c08");
+            strokeColor = "#10b981";
+            strokeW = 2;
+        } else if (isMatchNow) {
+            cardG.addColorStop(0, "#064e3b");
+            cardG.addColorStop(1, "#062419");
+            strokeColor = "#34d399";
+            strokeW = 2.5;
+        } else if (isMissNow) {
+            cardG.addColorStop(0, "#450a0a");
+            cardG.addColorStop(1, "#180202");
+            strokeColor = "#ef4444";
+            strokeW = 2;
+        } else if (isFlipped) {
+            cardG.addColorStop(0, "#3b2e04");
+            cardG.addColorStop(1, "#110e02");
+            strokeColor = "#eab308";
+            strokeW = 2;
+        } else {
+            cardG.addColorStop(0, "#0a0f1d");
+            cardG.addColorStop(1, "#03050a");
+            strokeColor = "rgba(6,182,212,0.3)";
+            strokeW = 1.2;
+        }
+
+        ctx.fillStyle = cardG;
+        roundRect(ctx, cx, cy, CELL, CELL, 8);
+        ctx.fill();
+        ctx.strokeStyle = strokeColor;
+        ctx.lineWidth = strokeW;
+        ctx.stroke();
+
+        const labelCoord = `${String.fromCharCode(65 + c)}${r + 1}`;
+
+        if (isMatched || isFlipped || isMatchNow || isMissNow) {
+            ctx.font = "36px 'Segoe UI Emoji'";
+            ctx.textAlign = "center";
+            ctx.fillText(game.board[idx], cx + CELL / 2, cy + CELL / 2 + 10);
+            
+            ctx.font = "bold 8px 'Courier New'";
+            ctx.fillStyle = isMatched ? "#10b981" : "rgba(255,255,255,0.4)";
+            ctx.fillText(labelCoord, cx + CELL / 2, cy + CELL - 7);
+            ctx.textAlign = "left";
+        } else {
+            ctx.font = "bold 20px 'Courier New'";
+            ctx.fillStyle = "rgba(234, 179, 8, 0.25)";
+            ctx.textAlign = "center";
+            ctx.fillText("⚡", cx + CELL / 2, cy + CELL / 2 + 2);
+            
+            ctx.font = "bold 8px 'Courier New'";
+            ctx.fillStyle = "rgba(255,255,255,0.22)";
+            ctx.fillText(labelCoord, cx + CELL / 2, cy + CELL - 7);
+            ctx.textAlign = "left";
+        }
+    }
+
+    let statusText = "", statusColor = "#eab308";
+    if (phase === "start") statusText = "⚡ 𝖱𝖾𝗍𝗈𝗎𝗋𝗇𝖾𝗓 𝟤 𝖼𝖺𝗋𝗍𝖾𝗌 — 𝖾𝗑: 𝗆𝖾𝗆𝗈𝗋𝗒 𝖠𝖨 𝖡𝟤";
+    else if (phase === "match") statusText = "✨ 𝖯𝖠𝖨𝖱𝖤 𝖳𝖱𝖮𝖴𝖵𝖤́𝖤 ! 𝖵𝗈𝗎𝗌 𝖾̂𝗍𝖾𝗌 𝗋𝖺𝗉𝗂𝖽𝖾 !";
+    else if (phase === "miss") statusText = "💥 𝖤𝖱𝖱𝖤𝖴𝖱 ! 𝖬𝖾́𝗆𝗈𝗋𝗂𝗌𝖾𝗓 𝗅𝖾𝗌 𝗌𝖼𝖾𝖺𝗎𝗑 !";
+    else if (phase === "win") statusText = "🏆 𝖦𝖠𝖦𝖭𝖤́ ! 𝖫'𝖤𝗌𝗉𝖺𝖼𝖾-𝖳𝖾𝗆𝗉𝗌 𝖾𝗌𝗍 𝗆𝖺𝗂̂𝗍𝗋𝗂𝗌𝖾́ !";
+    else if (phase === "timeout") statusText = "⏰ 𝖳𝖤𝖬𝖯𝖲 𝖤́𝖢𝖮𝖴𝖫𝖤́ — 𝖯𝖺𝗋𝗍𝗂𝖾 𝗍𝖾𝗋𝗆𝗂𝗇𝖾́𝖾 !";
+
+    const footerY = H - 54;
+    ctx.fillStyle = "rgba(255,255,255,0.02)";
+    ctx.strokeStyle = "rgba(234,179,8,0.15)";
+    roundRect(ctx, 28, footerY, W - 56, 30, 4);
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.font = "bold 11px 'Courier New'";
+    ctx.fillStyle = statusColor;
+    ctx.textAlign = "center";
+    ctx.fillText(statusText, W / 2, footerY + 19);
+
+    ctx.font = "bold 8px 'Courier New'";
+    ctx.fillStyle = "rgba(255,255,255,0.35)";
+    ctx.fillText(`Joueur: ${username.toUpperCase()}`, W / 2, H - 12);
+    ctx.textAlign = "left";
+
+    return canvas.toBuffer("image/png");
+}
+
+async function generateResultImage({ username, avatarUrl, win, bet, earned, newBalance, attempts, timeTaken, difficulty, matched, pairs, speedBonus }) {
+    const W = 680, H = 360;
+    const canvas = createCanvas(W, H);
+    const ctx    = canvas.getContext("2d");
+
+    const bg = ctx.createRadialGradient(W / 2, H / 2, 30, W / 2, H / 2, W * 0.85);
+    bg.addColorStop(0, win ? "#081c15" : "#220707");
+    bg.addColorStop(1, "#020305");
+    ctx.fillStyle = bg;
+    ctx.fillRect(0, 0, W, H);
+
+    ctx.fillStyle = "rgba(255,255,255,0.01)";
+    for (let y = 0; y < H; y += 4) ctx.fillRect(0, y, W, 1);
+
+    const bG = ctx.createLinearGradient(0, 0, W, H);
+    bG.addColorStop(0, win ? "#eab308" : "#ef4444");
+    bG.addColorStop(0.5, "#1e1b4b");
+    bG.addColorStop(1, win ? "#10b981" : "#b91c1c");
+    ctx.strokeStyle = bG;
+    ctx.lineWidth = 3;
+    roundRect(ctx, 12, 12, W - 24, H - 24, 14);
+    ctx.stroke();
+
+    ctx.font = "bold 23px 'Courier New'";
+    ctx.fillStyle = win ? "#eab308" : "#ef4444";
+    ctx.fillText(win ? "⚡ MISSION RÉUSSIE — VICTOIRE" : "💥 ÉCHEC DE LA MISSION", 32, 52);
+    ctx.font = "10px 'Courier New'";
+    ctx.fillStyle = "rgba(255,255,255,0.5)";
+    ctx.fillText(`${difficulty.toUpperCase()} • ${matched}/${pairs} SCEAUX ALIGNÉS`, 34, 68);
+
+    const ax = W - 55, ay = 48;
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(ax, ay, 28, 0, Math.PI * 2);
+    ctx.clip();
+    try {
+        const avatar = await loadImage(avatarUrl);
+        ctx.drawImage(avatar, ax - 28, ay - 28, 56, 56);
+    } catch { ctx.fillStyle = "#0f172a"; ctx.fill(); }
+    ctx.restore();
+    ctx.beginPath();
+    ctx.arc(ax, ay, 29, 0, Math.PI * 2);
+    ctx.strokeStyle = win ? "#eab308" : "#ef4444";
+    ctx.stroke();
+
+    ctx.font = "bold 13px 'Courier New'";
+    ctx.fillStyle = "#ffffff";
+    ctx.fillText(username.toUpperCase().substring(0, 22), 32, 104);
+    ctx.font = "9px 'Courier New'";
+    ctx.fillStyle = "rgba(6,182,212,0.7)";
+    ctx.fillText("NINJA UTILISATEUR", 32, 118);
+
+    ctx.strokeStyle = "rgba(255,255,255,0.1)";
+    ctx.beginPath(); ctx.moveTo(32, 130); ctx.lineTo(W - 32, 130); ctx.stroke();
+
+    const statsY = 155;
+    const cols = [
+        { label: "𝖬𝖨𝖲𝖤",         value: `${bet}$`,        color: "#ffffff" },
+        { label: win ? "𝖦𝖠𝖨𝖭" : "𝖯𝖤𝖱𝖳𝖤", value: win ? `+${earned}$` : `-${bet}$`, color: win ? "#eab308" : "#ef4444" },
+        { label: "𝖲𝖮𝖫𝖣𝖤",        value: `${newBalance}$`, color: "#fbbf24" },
+        { label: "𝖤𝖲𝖲𝖠𝖨𝖲",       value: `${attempts}`,    color: "#06b6d4" },
+        { label: "𝖳𝖤𝖬𝖯𝖲",        value: `${Math.floor(timeTaken / 60)}:${String(timeTaken % 60).padStart(2,"0")}`, color: "#f87171" }
+    ];
+    const cW = (W - 60) / cols.length;
+    for (let i = 0; i < cols.length; i++) {
+        const cx = 30 + i * cW;
+        ctx.fillStyle = "rgba(255,255,255,0.03)";
+        ctx.strokeStyle = "rgba(255,255,255,0.05)";
+        roundRect(ctx, cx + 3, statsY - 16, cW - 6, 52, 6);
+        ctx.fill(); ctx.stroke();
+        ctx.font = "8px 'Courier New'";
+        ctx.fillStyle = "rgba(255,255,255,0.4)";
+        ctx.fillText(cols[i].label, cx + 8, statsY);
+        ctx.font = `bold ${cols[i].value.length > 9 ? "10" : "12"}px 'Courier New'`;
+        ctx.fillStyle = cols[i].color;
+        ctx.fillText(cols[i].value, cx + 8, statsY + 22);
+    }
+
+    if (speedBonus && win) {
+        ctx.fillStyle = "rgba(234,179,8,0.08)";
+        roundRect(ctx, 32, statsY + 52, W - 64, 36, 6);
+        ctx.fill();
+        ctx.strokeStyle = "rgba(234,179,8,0.3)";
+        ctx.stroke();
+        ctx.font = "bold 12px 'Courier New'";
+        ctx.fillStyle = "#eab308";
+        ctx.textAlign = "center";
+        ctx.fillText(`⚡ BONUS ÉCLAIR JAUNE — Validé rapidement !`, W / 2, statsY + 74);
+        ctx.textAlign = "left";
+    }
+
+    const accY = statsY + (speedBonus && win ? 106 : 68);
+    const acc = attempts > 0 ? Math.round((matched / attempts) * 100) : 0;
+    ctx.fillStyle = "rgba(255,255,255,0.05)";
+    roundRect(ctx, 32, accY, W - 64, 8, 4);
+    ctx.fill();
+    ctx.fillStyle = win ? "#eab308" : "#ef4444";
+    roundRect(ctx, 32, accY, (W - 64) * (acc / 100), 8, 4);
+    ctx.fill();
+    ctx.font = "bold 9px 'Courier New'";
+    ctx.fillStyle = "rgba(255,255,255,0.5)";
+    ctx.fillText(`PRÉCISION : ${acc}%`, 32, accY - 5);
+
+    const d = new Date();
+    ctx.font = "8px 'Courier New'";
+    ctx.fillStyle = "rgba(255,255,255,0.2)";
+    ctx.textAlign = "center";
+    ctx.fillText(`MINATO BOT • ${d.getDate()}/${d.getMonth()+1}/${d.getFullYear()}`, W / 2, H - 15);
+    ctx.textAlign = "left";
+
+    return canvas.toBuffer("image/png");
+}
+
+async function sendBoard(message, game, username, avatarUrl, lastFlipped, lastMatch, lastMiss, phase, titleBox, bodyLines) {
+    const body = S(titleBox, bodyLines, username);
+    try {
+        const img = await generateBoardImage({ game, username, avatarUrl, lastFlipped, lastMatch, lastMiss, phase });
+        const p = `./memory_board_${game.uid}_${Date.now()}.png`;
+        fs.writeFileSync(p, img);
+        await message.reply({ body, attachment: fs.createReadStream(p) });
+        fs.unlinkSync(p);
+    } catch { await message.reply(body); }
+}
+
+async function endGame(message, game, win, username, avatarUrl) {
+    activeGames.delete(game.uid);
+    saveGames();
+
+    const diff      = DIFFICULTIES[game.difficulty];  
+    const timeTaken = Math.floor((Date.now() - game.startTime) / 1000);  
+    const speedBonus = timeTaken <= diff.bonusSpeed;  
+    const mult       = speedBonus ? diff.bonusMult : diff.multiplier;  
+
+    let earned = 0n;  
+    if (win) {  
+        earned = game.bet * BigInt(Math.floor(mult * 10)) / 10n;  
+        await updateUserCash(game.uid, earned);  
+    }  
+
+    const newBalance = await getUserCash(game.uid);  
+    const [fBet, fEarned, fNew] = await Promise.all([  
+        formatNumber(game.bet),  
+        formatNumber(win ? earned : game.bet),  
+        formatNumber(newBalance),  
+    ]);  
+
+    const lines = [  
+        `🃏 Sceaux : ${game.matched}/${diff.pairs}`,  
+        `🎯 Essais : ${game.attempts}`,  
+        `⏱️ Chrono : ${Math.floor(timeTaken / 60)}m ${timeTaken % 60}s`,  
+        "---",  
+        win ? `✨ Gain : +${fEarned}$ (x${mult})` : `📉 Perte : -${fBet}$`,  
+        (speedBonus && win) ? `⚡ Bonus Éclair Jaune Activé !` : null,  
+        `💳 Solde : ${fNew}$`,  
+    ].filter(Boolean);  
+
+    const titleBox = win ? "🏆 MISSION RÉUSSIE" : "💥 MISSION ÉCHOUÉE";
+    await message.reply(S(titleBox, lines, username));  
+
+    try {  
+        const img = await generateResultImage({  
+            username, avatarUrl, win,  
+            bet: fBet, earned: fEarned, newBalance: fNew,  
+            attempts: game.attempts,  
+            timeTaken,  
+            difficulty: game.difficulty,  
+            matched: game.matched,  
+            pairs: diff.pairs,  
+            speedBonus: speedBonus && win,  
+        });  
+        const p = `./memory_result_${game.uid}_${Date.now()}.png`;  
+        fs.writeFileSync(p, img);  
+        await message.reply({ body: "⚡ Rapport de l'Espace-Temps :", attachment: fs.createReadStream(p) });  
+        fs.unlinkSync(p);  
+    } catch {}
+}
+
+module.exports = {
+    config: {
+        name: "memory",
+        version: "2.5",
+        author: "chris x Minato",
+        countDown: 2,
+        role: 0,
+        category: "fun",
+        shortDescription: { en: "Jeu de mémoire de Minato Namikaze — trouvez les paires !" },
+        longDescription: { en: "🧠 Maîtrisez l'espace-temps en retournant les cartes avant la fin du temps imparti. Les éclairs de vitesse augmentent vos gains !" }
+    },
+
+    onStart: async function ({ args, message, event, api }) {  
+        const uid = String(event.senderID);  
+        const p   = global.utils.getPrefix(event.threadID);  
+        const sub = args[0]?.toLowerCase();  
+        const username = await getUserName(uid, api);
+        const avatarUrl = await getUserAvatar(uid, api);
+
+        if (!sub || sub === "help") {  
+            let helpMenu = "╭─────────────•┈┈\n" +
+                           "│ 🧠 𝐌𝐄𝐌𝐎𝐑𝐘 𝐆𝐀𝐌𝐄\n" +
+                           "├─────────────•┈┈\n" +
+                           `│ ${p}𝐦𝐞𝐦𝐨𝐫𝐲 𝐬𝐭𝐚𝐫𝐭 <𝐦𝐢𝐬𝐞> [𝐝𝐢𝐟𝐟] [𝐭𝐡è𝐦𝐞]\n` +
+                           "├─────────────•┈┈\n" +
+                           "│ 📊 𝐃𝐈𝐅𝐅𝐈𝐂𝐔𝐋𝐓É𝐒\n" +
+                           "│ 𝐟𝐚𝐜𝐢𝐥𝐞    → 𝐱2  (𝐛𝐨𝐧𝐮𝐬 𝐯𝐢𝐭𝐞𝐬𝐬𝐞 <5:00 → 𝐱3)\n" +
+                           "│ 𝐧𝐨𝐫𝐦𝐚𝐥    → 𝐱3  (𝐛𝐨𝐧𝐮𝐬 𝐯𝐢𝐭𝐞𝐬𝐬𝐞 <4:00 → 𝐱5)\n" +
+                           "│ 𝐝𝐢𝐟𝐟𝐢𝐜𝐢𝐥𝐞 → 𝐱5  (𝐛𝐨𝐧𝐮𝐬 𝐯𝐢𝐭𝐞𝐬𝐬𝐞 <3:00 → 𝐱8)\n" +
+                           "│ 𝐞𝐱𝐭𝐫𝐞𝐦𝐞   → 𝐱8  (𝐛𝐨𝐧𝐮𝐬 𝐯𝐢𝐭𝐞𝐬𝐬𝐞 <2:00 → 𝐱15)\n" +
+                           "├─────────────•┈┈\n" +
+                           "│ 🎨 𝐓𝐇È𝐌𝐄𝐒\n" +
+                           "│ 𝐚𝐧𝐢𝐦𝐚𝐮𝐱 • 𝐟𝐫𝐮𝐢𝐭𝐬 • 𝐞𝐬𝐩𝐚𝐜𝐞 • 𝐜𝐚𝐬𝐢𝐧𝐨 • 𝐧𝐚𝐭𝐮𝐫𝐞 • 𝐬𝐩𝐨𝐫𝐭 • 𝐩𝐚𝐲𝐬 • 𝐟𝐨𝐨𝐝\n" +
+                           "├─────────────•┈┈\n" +
+                           "│ 🎮 𝐄𝐍 𝐉𝐄𝐔\n" +
+                           "│ 𝐦𝐞𝐦𝐨𝐫𝐲 𝐀1 𝐁3 → 𝐫𝐞𝐭𝐨𝐮𝐫𝐧𝐞𝐫 2 𝐜𝐚𝐫𝐭𝐞𝐬\n" +
+                           `│ ${p}𝐦𝐞𝐦𝐨𝐫𝐲 𝐡𝐢𝐧𝐭 → 𝐢𝐧𝐝𝐢𝐜𝐞 (-20% 𝐠𝐚𝐢𝐧)\n` +
+                           `│ ${p}𝐦𝐞𝐦𝐨𝐫𝐲 𝐚𝐛𝐚𝐧𝐝𝐨𝐧\n` +
+                           "│ ⏱️ 10 𝐦𝐢𝐧𝐮𝐭𝐞𝐬 𝐩𝐨𝐮𝐫 𝐭𝐨𝐮𝐭𝐞𝐬 𝐥𝐞𝐬 𝐝𝐢𝐟𝐟𝐢𝐜𝐮𝐥𝐭é𝐬\n" +
+                           "╰─────────────•┈┈";
+            
+            return message.reply("🚀 ❲ 𝗦𝗲𝗻𝘁 𝗦𝘂𝗰𝗰𝗲𝘀𝗳𝘂𝗹𝗹𝘆 ❳ 🚀\n━━━━━━━━━━━━━━━\n" + helpMenu + "\n━━━━━━━━━━━━━━━ ✕ ━━━━━━");
+        }
+
+        if (sub === "abandon" || sub === "quit" || sub === "stop") {
+            const game = activeGames.get(uid);
+            if (!game) return message.reply(S("⚠️ ERREUR", ["Aucune partie en cours actuellement."], username));
+            await endGame(message, game, false, username, avatarUrl);
+            return;
+        }
+
+        if (sub === "hint" || sub === "indice") {
+            const game = activeGames.get(uid);
+            if (!game) return message.reply(S("⚠️ ERREUR", ["Aucune partie en cours pour demander un indice."], username));
+            
+            let unrevealedIdx = [];
+            for (let i = 0; i < game.revealed.length; i++) {
+                if (!game.revealed[i]) unrevealedIdx.push(i);
+            }
+            if (unrevealedIdx.length < 2) return message.reply(S("🔮 INDICE", ["Toutes les paires sont presque trouvées !"], username));
+            
+            let first = unrevealedIdx[Math.floor(Math.random() * unrevealedIdx.length)];
+            let second = -1;
+            for (let i = 0; i < game.board.length; i++) {
+                if (i !== first && game.board[i] === game.board[first]) {
+                    second = i;
+                    break;
+                }
+            }
+            
+            const r1 = Math.floor(first / game.cols) + 1;
+            const c1 = String.fromCharCode(65 + (first % game.cols));
+            const r2 = Math.floor(second / game.cols) + 1;
+            const c2 = String.fromCharCode(65 + (second % game.cols));
+            
+            game.bet = game.bet * 80n / 100n; 
+            if (game.bet < 1n) game.bet = 1n;
+            game.betFormatted = await formatNumber(game.bet);
+            saveGames();
+            
+            return message.reply(S("🔮 PACTE SPHÈRE", [
+                `Indice révélé : Une paire se cache entre ${c1}${r1} et ${c2}${r2}`,
+                `⚠️ Vos gains potentiels ont été réduits de 20%.`,
+                `💰 Nouvelle valeur de votre mise : ${game.betFormatted}$`
+            ], username));
+        }
+
+        if (sub === "start" || sub === "jouer" || sub === "play") {  
+            if (activeGames.has(uid)) {  
+                return message.reply(S("⚠️ ALERTE", [
+                    "Une faille temporelle est déjà ouverte !",
+                    `📝 Jouez : ${p}memory A1 B2`,
+                    `🏳️ Abandon : ${p}memory abandon`
+                ], username));
+            }  
+            const bet        = await parseAmount(args[1]);  
+            const difficulty = (args[2]?.toLowerCase() in DIFFICULTIES) ? args[2].toLowerCase() : "normal";  
+            const theme      = (args[3]?.toLowerCase() in CARD_THEMES)  ? args[3].toLowerCase() : "animaux";  
+
+            if (bet <= 0n) return message.reply(S("⚠️ ERREUR", ["Le montant de la mise entré est invalide.", `Exemple : ${p}memory start 50k`], username));  
+            const userMoney = await getUserCash(uid);  
+            if (bet > userMoney) {  
+                return message.reply(S("⚠️ FONDS INSUFFISANTS", [
+                    `Votre solde actuel ne permet pas cette mise.`,
+                    `💰 Solde : ${await formatNumber(userMoney)}$`,
+                    `🎲 MISE  : ${await formatNumber(bet)}$`
+                ], username));
+            }  
+
+            const updateSuccess = await updateUserCash(uid, -bet);  
+            if (!updateSuccess) {  
+                return message.reply(S("⚠️ ERREUR", ["Échec critique lors du prélèvement des fonds."], username));  
+            }  
+
+            const diff  = DIFFICULTIES[difficulty];  
+            const board = createBoard(difficulty, theme);  
+            const game  = {  
+                uid, difficulty, theme,  
+                board, cols: diff.grid,  
+                revealed:  new Array(board.length).fill(false),  
+                attempts:  0,  
+                matched:   0,  
+                startTime: Date.now(),  
+                bet,  
+                betFormatted: await formatNumber(bet),  
+                firstCard: null,  
+                lastFlipped: null,
+                lock: false
+            };  
+            activeGames.set(uid, game);  
+            saveGames();  
+
+            await sendBoard(message, game, username, avatarUrl, [], [], [], "start", "🧠 PARTIE LANCÉE", [
+                `📊 Difficulté : ${difficulty}`,  
+                `🎨 Thème choisi : ${theme}`,  
+                `🃏 Nombre de paires : ${diff.pairs}`,  
+                `⏱️ Temps limite global : 10 minutes`,  
+                `💰 Mise scellée : ${game.betFormatted}$`,  
+                "---",  
+                "📝 Retournez 2 cartes : memory A1 B2"
+            ]);  
+
+            setTimeout(async () => {  
+                const g = activeGames.get(uid);  
+                if (!g) return;  
+                const [uname, uavatar] = await Promise.all([getUserName(uid, api), getUserAvatar(uid, api)]);  
+                await sendBoard(message, g, uname, uavatar, [], [], [], "timeout", "⏰ TEMPS ÉCOULÉ", ["La barrière temporelle s'est refermée !"]);
+                await endGame(message, g, false, uname, uavatar);  
+            }, diff.timeLimit * 1000);  
+
+            return;  
+        }  
+
+        const game = activeGames.get(uid);  
+        if (!game) {  
+            return message.reply(S("⚠️ APPLICATION", [
+                "Aucun espace de jeu actif détecté.",
+                `📝 Lancez un défi : ${p}memory start <mise>`
+            ], username));
+        }  
+
+        if (game.lock) return;
+
+        const diff    = DIFFICULTIES[game.difficulty];  
+        const elapsed = Math.floor((Date.now() - game.startTime) / 1000);  
+        if (elapsed >= diff.timeLimit) {  
+            return endGame(message, game, false, username, avatarUrl);  
+        }  
+
+        const coord1 = parseCoord(args[0], game.cols, Math.ceil(game.board.length / game.cols));  
+        const coord2 = parseCoord(args[1], game.cols, Math.ceil(game.board.length / game.cols));  
+
+        if (!coord1 || !coord2) {  
+            return message.reply(S("⚠️ FLUX INVALIDE", [
+                "Les coordonnées transmises sont incorrectes.",
+                "📝 Format requis : memory A1 B2",
+                `📐 Dimensions : A-${String.fromCharCode(64 + game.cols)} • 1-${Math.ceil(game.board.length / game.cols)}`
+            ], username));
+        }  
+
+        if (coord1.index === coord2.index) {  
+            return message.reply(S("⚠️ SELECTION", ["Vous devez désigner deux emplacements distincts."], username));
+        }  
+
+        if (game.revealed[coord1.index] || game.revealed[coord2.index]) {  
+            return message.reply(S("⚠️ INFRACTION", ["L'une des dalles sélectionnées est déjà définitivement découverte !"], username));
+        }  
+
+        game.attempts++;  
+        const isMatch = game.board[coord1.index] === game.board[coord2.index];  
+
+        if (isMatch) {  
+            game.revealed[coord1.index] = true;  
+            game.revealed[coord2.index] = true;  
+            game.matched++;  
+            saveGames();  
+
+            const win = game.matched >= diff.pairs;  
+            if (win) {  
+                await sendBoard(message, game, username, avatarUrl,  
+                    [coord1.index, coord2.index],  
+                    [coord1.index, coord2.index],  
+                    [], "win", "🏆 COMPLÉTION",
+                    [  
+                        "Sceaux parfaitement alignés !",  
+                        `🃏 Correspondance : [${args[0].toUpperCase()}] & [${args[1].toUpperCase()}] (${game.board[coord1.index]})`,  
+                        `✅ Total de paires validées : ${game.matched}/${diff.pairs}`
+                    ]  
+                );  
+                return endGame(message, game, true, username, avatarUrl);  
+            }  
+
+            await sendBoard(message, game, username, avatarUrl,  
+                [coord1.index, coord2.index],  
+                [coord1.index, coord2.index],  
+                [], "match", "✨ HARMONISATION",
+                [  
+                    `Paire connectée ! ${game.board[coord1.index]}`,  
+                    `📍 Cibles : ${args[0].toUpperCase()} & ${args[1].toUpperCase()}`,  
+                    `🃏 Progression : ${game.matched}/${diff.pairs}`,  
+                    `🎯 Compteur d'essais : ${game.attempts}`,  
+                    "---",  
+                    "📝 Prochain mouvement attendu..."
+                ]  
+            );  
+        } else {  
+            game.lock = true;
+            saveGames();  
+            await sendBoard(message, game, username, avatarUrl,  
+                [coord1.index, coord2.index],  
+                [],  
+                [coord1.index, coord2.index],  
+                "miss", "💥 DISCORDANCE",
+                [  
+                    `Aucune résonance entre ces deux symboles.`,  
+                    `📍 [${args[0].toUpperCase()}] (${game.board[coord1.index]}) ≠ [${args[1].toUpperCase()}] (${game.board[coord2.index]})`,  
+                    `🃏 Progression : ${game.matched}/${diff.pairs}`,  
+                    `🎯 Compteur d'essais : ${game.attempts}`,  
+                    "---",  
+                    "📝 Mémorisation des sceaux en cours..."
+                ]  
+            );  
+
+            setTimeout(async () => {
+                const checkGame = activeGames.get(uid);
+                if (!checkGame) return;
+                checkGame.lock = false;
+                saveGames();
+                
+                await sendBoard(message, checkGame, username, avatarUrl, [], [], [], "start", "🔮 RESSURGENCE", [
+                    "Dissimulation automatique accomplie.",
+                    "📝 Reprenez l'analyse : memory A1 B2"
+                ]);
+            }, 3500);
+        }  
+    }
+};
+
+```
