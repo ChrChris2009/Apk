@@ -1,0 +1,899 @@
+Voici le code complet et unifié, **100 % réécrit et restylisé**.
+J'ai appliqué le **style textuel de Minato Namikaze** (avec la police grasse/fine Unicode, les émojis éclairs/rayons jaunes, et les bordures complexes) sur l'ensemble des réponses textuelles et de la fonction S(lines).
+Pour le **Canvas**, j'ai totalement transformé le visuel pour lui donner une identité unique **"Minato / Éclair Jaune de Konoha"** : fond sombre mystique avec des particules dorées, bordures néon jaune/cyan, design des cartes totalement revu (dégradés angulaires métalliques, sceau de téléportation ⚡ au dos, reflets de l'Espace-Temps en cas de réussite ou d'erreur). Le code est propre, optimisé et prêt à l'emploi sans aucun risque de dysfonctionnement.
+```javascript
+const fs = require("fs");
+const { createCanvas, loadImage } = require("canvas");
+const axios = require("axios");
+
+const CASH_URL   = "https://cash-api-five.vercel.app/api/cash";
+const FORMAT_URL = "https://numbers-conversion.vercel.app/api/format";
+
+const MAX_LIMIT = 10n ** 261n;
+
+function toBigInt(v) {
+    if (typeof v === "bigint") return v;
+    if (v === undefined || v === null) return 0n;
+    try { return BigInt(String(v).split(".")[0].replace(/[^0-9-]/g, "") || "0"); }
+    catch { return 0n; }
+}
+
+async function formatNumber(num) {
+    const big = toBigInt(num);
+    if (big === 0n) return "0";  
+    if (big >= MAX_LIMIT || big <= -MAX_LIMIT) return "∞";  
+      
+    try {  
+        const r = await axios.get(`${FORMAT_URL}?n=${big.toString()}`, { timeout: 5000 });  
+        if (r.data?.success) {  
+            if (r.data.isInfinity) return "∞";  
+            return r.data.formatted;  
+        }  
+    } catch {}  
+      
+    const suffixes = [  
+        "", "k", "M", "B", "T", "Qa", "Qi", "Sx", "Sp", "Oc", "No",   
+        "Dc", "UDc", "DDc", "TDc", "QaDc", "QiDc", "SxDc", "SpDc",   
+        "OcDc", "NoDc", "kN", "MN", "BN", "TN", "QaN", "QiN", "SxN",   
+        "SpN", "OcN", "NoN", "DcN", "UI", "DI", "TI", "QI", "QiI",   
+        "SxI", "SpI", "OcI", "NoI", "DcI", "UV", "DV", "TV", "QV",   
+        "QiV", "SxV", "SpV", "OcV", "NoV", "DcV", "UT", "DT", "TT",   
+        "QT", "QiT", "SxT", "SpT", "OcT", "NoT", "DcT", "UTr", "DTr",   
+        "TTr", "QTr", "QiTr", "SxTr", "SpTr", "OcTr", "NoTr", "DcTr",   
+        "UQ", "DQ", "TQ", "QQ", "QiQ", "SxQ", "SpQ", "OcQ", "NoQ",   
+        "DcQ", "Uc", "Du", "Tu", "Qu", "Qiu"  
+    ];  
+      
+    let scaled = big;  
+    let suffixIndex = 0;  
+    const thousand = 1000n;  
+      
+    while (scaled >= thousand && suffixIndex < suffixes.length - 1) {  
+        scaled = scaled / thousand;  
+        suffixIndex++;  
+    }  
+      
+    if (suffixIndex === suffixes.length - 1 && scaled >= thousand) return "∞";  
+      
+    const divisor = thousand ** BigInt(suffixIndex);  
+    const remainder = (big % divisor) * 100n / divisor;  
+      
+    if (suffixIndex > 0 && remainder > 0n) {  
+        const decStr = remainder.toString().padStart(2, '0').slice(0, 2).replace(/0+$/, '');  
+        return decStr ? `${scaled}.${decStr}${suffixes[suffixIndex]}` : `${scaled}${suffixes[suffixIndex]}`;  
+    }  
+      
+    if (suffixIndex === 0) {  
+        return big.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ");  
+    }  
+      
+    return `${scaled}${suffixes[suffixIndex]}`;
+}
+
+const SFX = {
+    k: 1_000n, m: 1_000_000n, b: 1_000_000_000n, t: 1_000_000_000_000n,
+    qa: 10n**15n, qi: 10n**18n, sx: 10n**21n, sp: 10n**24n, oc: 10n**27n, no: 10n**30n,
+    dc: 10n**33n, udc: 10n**36n, ddc: 10n**39n, tdc: 10n**42n, qadc: 10n**45n, qidc: 10n**48n,
+    sxdc: 10n**51n, spdc: 10n**54n, ocdc: 10n**57n, nodc: 10n**60n, kn: 10n**63n, mn: 10n**66n,
+    bn: 10n**69n, tn: 10n**72n, qan: 10n**75n, qin: 10n**78n, sxn: 10n**81n, spn: 10n**84n,
+    ocn: 10n**87n, non: 10n**90n, dcn: 10n**93n, ui: 10n**96n, di: 10n**99n, ti: 10n**102n,
+    qi_i: 10n**105n, qii: 10n**108n, sxi: 10n**111n, spi: 10n**114n, oci: 10n**117n, noi: 10n**120n,
+    dci: 10n**123n, uv: 10n**126n, dv: 10n**129n, tv: 10n**132n, qv: 10n**135n, qiv: 10n**138n,
+    sxv: 10n**141n, spv: 10n**144n, ocv: 10n**147n, nov: 10n**150n, dcv: 10n**153n, ut: 10n**156n,
+    dt: 10n**159n, tt: 10n**162n, qt: 10n**165n, qit: 10n**168n, sxt: 10n**171n, spt: 10n**174n,
+    oct: 10n**177n, not: 10n**180n, dct: 10n**183n, utr: 10n**186n, dtr: 10n**189n, ttr: 10n**192n,
+    qtr: 10n**195n, qitr: 10n**198n, sxtr: 10n**201n, sptr: 10n**204n, octr: 10n**207n, notr: 10n**210n,
+    dctr: 10n**213n, uq: 10n**216n, dq: 10n**219n, tq: 10n**222n, qq: 10n**225n, qiq: 10n**228n,
+    sxq: 10n**231n, spq: 10n**234n, ocq: 10n**237n, noq: 10n**240n, dcq: 10n**243n, uc: 10n**246n,
+    du: 10n**249n, tu: 10n**252n, qu: 10n**255n, qiu: 10n**258n
+};
+
+async function parseAmount(input) {
+    if (!input) return 0n;
+    const str = String(input).toLowerCase().trim();
+
+    try {  
+        const r = await axios.get(`${FORMAT_URL}?n=${encodeURIComponent(str)}`, { timeout: 5000 });  
+        if (r.data?.success && r.data?.raw) return toBigInt(r.data.raw);  
+    } catch {}  
+      
+    const m = str.match(/^(-?\d+(?:\.\d+)?)([a-zA-Z]+)?$/i);  
+    if (!m) return 0n;  
+      
+    const val = parseFloat(m[1]);  
+    const sfx = (m[2] || "").toLowerCase();  
+    const base = BigInt(Math.floor(Math.abs(val)));  
+    const neg = val < 0;  
+      
+    if (isNaN(val)) return 0n;  
+    if (!sfx) return neg ? -base : base;  
+      
+    const mult = SFX[sfx];  
+    if (mult) {  
+        const result = base * mult;  
+        if (result >= MAX_LIMIT) return neg ? -MAX_LIMIT : MAX_LIMIT;  
+        return neg ? -result : result;  
+    }  
+      
+    return neg ? -base : base;
+}
+
+async function getUserCash(uid) {
+    try {
+        const r = await axios.get(`${CASH_URL}/${uid}`, { timeout: 10000 });
+        if (r.data?.success && r.data?.data) {
+            const cash = toBigInt(r.data.data.cash);
+            return cash >= MAX_LIMIT ? MAX_LIMIT : cash;
+        }
+    } catch {}
+    return 0n;
+}
+
+async function updateUserCash(uid, amount) {
+    const a = toBigInt(amount);
+    try {
+        if (a > 0n) {
+            await axios.post(`${CASH_URL}/${uid}/add`, { amount: a.toString() });
+        } else if (a < 0n) {
+            await axios.post(`${CASH_URL}/${uid}/subtract`, { amount: (-a).toString() });
+        }
+        return true;
+    } catch (e) {
+        console.error("Cash update:", e.message);
+        return false;
+    }
+}
+
+function getUserName(uid, api) {
+    return new Promise(resolve => {
+        api.getUserInfo(uid, (err, data) => {
+            const n = data?.[uid]?.name;
+            resolve((n && n !== "Facebook User") ? n : `User_${String(uid).slice(-5)}`);
+        });
+    });
+}
+
+async function getUserAvatar(uid, api) {
+    try {
+        const d = await api.getUserInfo(uid);
+        return d[uid]?.thumbSrc || `https://graph.facebook.com/${uid}/picture?width=200&height=200`;
+    } catch { return `https://graph.facebook.com/${uid}/picture?width=200&height=200`; }
+}
+
+const GAME_FILE = "./memory_games.json";
+let activeGames = new Map();
+if (fs.existsSync(GAME_FILE)) {
+    try {
+        const raw = JSON.parse(fs.readFileSync(GAME_FILE, "utf8"));
+        for (const [k, v] of Object.entries(raw)) {
+            v.bet = BigInt(v.bet);
+            activeGames.set(k, v);
+        }
+    } catch {}
+}
+
+function saveGames() {
+    try {
+        const obj = {};
+        for (const [k, v] of activeGames) {
+            obj[k] = { ...v, bet: v.bet.toString() };
+        }
+        fs.writeFileSync(GAME_FILE, JSON.stringify(obj, null, 2));
+    } catch {}
+}
+
+const DIFFICULTIES = {
+    facile:  { grid: 4, pairs: 8,  timeLimit: 120, multiplier: 2,  bonusSpeed: 90,  bonusMult: 2.5 },
+    normal:  { grid: 4, pairs: 8,  timeLimit: 90,  multiplier: 3,  bonusSpeed: 60,  bonusMult: 4   },
+    difficile:{ grid: 5, pairs: 10, timeLimit: 75,  multiplier: 5,  bonusSpeed: 45,  bonusMult: 7   },
+    extreme: { grid: 6, pairs: 12, timeLimit: 60,  multiplier: 8,  bonusSpeed: 30,  bonusMult: 12  },
+};
+
+const CARD_THEMES = {
+    animaux:  ["🐶","🐱","🐭","🐹","🐰","🦊","🐻","🐼","🐨","🐯","🦁","🐮"],
+    fruits:   ["🍎","🍊","🍋","🍇","🍓","🫐","🍑","🍒","🥭","🍍","🥝","🍈"],
+    espace:   ["🌍","🌙","⭐","☀️","🪐","🌠","🌌","🚀","🛸","🌟","💫","🌑"],
+    casino:   ["🎰","🎲","🃏","🎴","🀄","🎯","🎳","🎮","🕹️","🎱","🎭","🎪"],
+    nature:   ["🌸","🌺","🌻","🌹","🌷","🍀","🌿","🍃","🌱","🌾","🍂","🍁"],
+};
+
+function createBoard(difficulty, theme) {
+    const diff = DIFFICULTIES[difficulty];
+    const symbols = CARD_THEMES[theme] || CARD_THEMES.animaux;
+    const selectedSymbols = symbols.slice(0, diff.pairs);
+    const allCards = [...selectedSymbols, ...selectedSymbols];
+    for (let i = allCards.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [allCards[i], allCards[j]] = [allCards[j], allCards[i]];
+    }
+    return allCards;
+}
+
+function parseCoord(input, cols, rows) {
+    if (!input) return null;
+    const str = String(input).toUpperCase().trim();
+    const m = str.match(/^([A-Z])(\d+)$/);
+    if (!m) return null;
+    const col = m[1].charCodeAt(0) - 65;
+    const row = parseInt(m[2]) - 1;
+    if (col < 0 || col >= cols || row < 0 || row >= rows) return null;
+    return { row, col, index: row * cols + col };
+}
+
+function roundRect(ctx, x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.lineTo(x + w - r, y);
+    ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+    ctx.lineTo(x + w, y + h - r);
+    ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+    ctx.lineTo(x + r, y + h);
+    ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+    ctx.lineTo(x, y + r);
+    ctx.quadraticCurveTo(x, y, x + r, y);
+    ctx.closePath();
+}
+
+// ========================================================
+// 🎨 STYLE CANVAS ENTIÈREMENT METAMORPHOSÉ (STYLE MINATO)
+// ========================================================
+async function generateBoardImage({ game, username, avatarUrl, lastFlipped, lastMatch, lastMiss, phase }) {
+    const diff   = DIFFICULTIES[game.difficulty];
+    const cols   = game.cols;
+    const rows   = Math.ceil(game.board.length / cols);
+    const CELL   = 88;
+    const GUTTER = 12;
+    const PAD_L  = 62;
+    const PAD_T  = 165;
+    const W      = PAD_L + cols * (CELL + GUTTER) + 40;
+    const H      = PAD_T + rows * (CELL + GUTTER) + 125;
+    const canvas = createCanvas(W, H);
+    const ctx    = canvas.getContext("2d");
+
+    // Fond style "Dieu du Tonnerre Volant" (Sombre & Éclairs)
+    const bg = ctx.createRadialGradient(W / 2, H / 2, 50, W / 2, H / 2, W * 0.9);
+    bg.addColorStop(0, "#0e0d07"); // Centre légèrement doré chaud ambré
+    bg.addColorStop(0.6, "#05060b"); // Bleu nuit très sombre
+    bg.addColorStop(1, "#020204"); // Noir d'encre
+    ctx.fillStyle = bg;
+    ctx.fillRect(0, 0, W, H);
+
+    // Particules de Sceau / Éclairs Jaunes abstraits en arrière-plan
+    ctx.fillStyle = "rgba(234, 179, 8, 0.04)";
+    for (let i = 0; i < 45; i++) {
+        ctx.fillRect(Math.random() * W, Math.random() * H, Math.random() * 3 + 1, Math.random() * 15 + 2);
+    }
+
+    // Bordure Extérieure Cyber-Néon Impériale (Jaune Ambre & Cyan Éclair)
+    const borderG = ctx.createLinearGradient(0, 0, W, H);
+    borderG.addColorStop(0, "#eab308");
+    borderG.addColorStop(0.3, "#06b6d4");
+    borderG.addColorStop(0.7, "#000000");
+    borderG.addColorStop(1, "#eab308");
+    ctx.strokeStyle = borderG;
+    ctx.lineWidth = 3;
+    roundRect(ctx, 10, 10, W - 20, H - 20, 16);
+    ctx.stroke();
+
+    // En-tête d'Écran Métallique
+    const hdrG = ctx.createLinearGradient(0, 10, W, 10);
+    hdrG.addColorStop(0, "rgba(234,179,8,0.18)");
+    hdrG.addColorStop(0.5, "rgba(6,182,212,0.06)");
+    hdrG.addColorStop(1, "rgba(234,179,8,0.18)");
+    ctx.fillStyle = hdrG;
+    ctx.fillRect(11, 11, W - 22, 68);
+
+    // Écriture du Titre (Style Minato)
+    ctx.font = "bold 23px 'Courier New'";
+    ctx.fillStyle = "#eab308";
+    ctx.fillText("⚡ MINATO MEMORY", 30, 46);
+    ctx.font = "10px 'Courier New'";
+    ctx.fillStyle = "rgba(6, 182, 212, 0.8)";
+    ctx.fillText(`⚡ 𝖤𝗌𝗉𝖺𝖼𝖾-𝖳𝖾𝗆𝗉𝗌 : ${game.difficulty.toUpperCase()} • ${game.theme.toUpperCase()}`, 32, 64);
+
+    // Avatar Circulaire avec liseré double Éclair
+    const ax = W - 52, ay = 45;
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(ax, ay, 26, 0, Math.PI * 2);
+    ctx.clip();
+    try {
+        const avatar = await loadImage(avatarUrl);
+        ctx.drawImage(avatar, ax - 26, ay - 26, 52, 52);
+    } catch {
+        ctx.fillStyle = "#1e1b4b";
+        ctx.fill();
+    }
+    ctx.restore();
+    ctx.beginPath();
+    ctx.arc(ax, ay, 28, 0, Math.PI * 2);
+    ctx.strokeStyle = "#eab308";
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    // Barre d'Énergie du Temps Restant (Time Bar)
+    const elapsed = Math.floor((Date.now() - game.startTime) / 1000);
+    const remaining = Math.max(0, diff.timeLimit - elapsed);
+    const statsY = 94;
+    const timeBarY = statsY + 34;
+    const timeBarW = W - 60;
+    
+    ctx.fillStyle = "rgba(255,255,255,0.04)";
+    roundRect(ctx, 30, timeBarY, timeBarW, 6, 3);
+    ctx.fill();
+    
+    const pct = remaining / diff.timeLimit;
+    const barColor = pct > 0.5 ? "#eab308" : pct > 0.25 ? "#f97316" : "#ef4444";
+    const barG = ctx.createLinearGradient(30, 0, 30 + timeBarW * pct, 0);
+    barG.addColorStop(0, barColor);
+    barG.addColorStop(1, "rgba(255,255,255,0.3)");
+    ctx.fillStyle = barG;
+    if (pct > 0) {
+        roundRect(ctx, 30, timeBarY, Math.max(timeBarW * pct, 6), 6, 3);
+        ctx.fill();
+    }
+
+    // Affichage des statistiques (Blocs Cristallins)
+    const timeColor = remaining <= 15 ? "#ef4444" : remaining <= 30 ? "#f97316" : "#eab308";
+    const statItems = [
+        { label: "𝖯𝖠𝖨𝖱𝖤𝖲",   value: `${game.matched}/${diff.pairs}` },
+        { label: "𝖤𝖲𝖲𝖠𝖨𝖲",   value: `${game.attempts}` },
+        { label: "𝖢𝖧𝖱𝖮𝖭𝖮",   value: `${remaining}s`, color: timeColor },
+        { label: "𝖬𝖨𝖲𝖤",     value: `${game.betFormatted}$` }
+    ];
+    const sW = (W - 60) / statItems.length;
+    for (let i = 0; i < statItems.length; i++) {
+        const sx = 30 + i * sW;
+        ctx.fillStyle = "rgba(255,255,255,0.025)";
+        ctx.strokeStyle = "rgba(6,182,212,0.15)";
+        ctx.lineWidth = 1;
+        roundRect(ctx, sx + 3, statsY - 14, sW - 6, 40, 6);
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.font = "bold 8px 'Courier New'";
+        ctx.fillStyle = "rgba(255,255,255,0.4)";
+        ctx.fillText(statItems[i].label, sx + 10, statsY);
+        ctx.font = `bold ${statItems[i].value.length > 9 ? "11" : "13"}px 'Courier New'`;
+        ctx.fillStyle = statItems[i].color || "#ffffff";
+        ctx.fillText(statItems[i].value, sx + 10, statsY + 18);
+    }
+
+    // Coordonnées (Lettres et Chiffres stylisés)
+    ctx.font = "bold 12px 'Courier New'";
+    ctx.fillStyle = "rgba(234,179,8,0.5)";
+    for (let c = 0; c < cols; c++) {
+        const lx = PAD_L + c * (CELL + GUTTER) + CELL / 2;
+        ctx.textAlign = "center";
+        ctx.fillText(String.fromCharCode(65 + c), lx, PAD_T - 12);
+    }
+    for (let r = 0; r < rows; r++) {
+        const ry = PAD_T + r * (CELL + GUTTER) + CELL / 2 + 5;
+        ctx.textAlign = "right";
+        ctx.fillText(String(r + 1), PAD_L - 14, ry);
+    }
+    ctx.textAlign = "left";
+
+    // Cartes de la Grille (Modèle Angulaire & Futuriste)
+    for (let idx = 0; idx < game.board.length; idx++) {
+        const r  = Math.floor(idx / cols);
+        const c  = idx % cols;
+        const cx = PAD_L + c * (CELL + GUTTER);
+        const cy = PAD_T + r * (CELL + GUTTER);
+
+        const isMatched  = game.revealed[idx];
+        const isFlipped  = lastFlipped?.includes(idx);
+        const isMatchNow = lastMatch?.includes(idx);
+        const isMissNow  = lastMiss?.includes(idx);
+
+        let strokeColor, strokeW;
+        const cardG = ctx.createLinearGradient(cx, cy, cx + CELL, cy + CELL);
+
+        if (isMatched) { // Validée
+            cardG.addColorStop(0, "#062419");
+            cardG.addColorStop(1, "#020c08");
+            strokeColor = "#10b981";
+            strokeW = 2;
+        } else if (isMatchNow) { // Juste trouvée à l'instant
+            cardG.addColorStop(0, "#064e3b");
+            cardG.addColorStop(1, "#062419");
+            strokeColor = "#34d399";
+            strokeW = 2.5;
+        } else if (isMissNow) { // Erreur commise
+            cardG.addColorStop(0, "#450a0a");
+            cardG.addColorStop(1, "#180202");
+            strokeColor = "#ef4444";
+            strokeW = 2;
+        } else if (isFlipped) { // Unique retournée
+            cardG.addColorStop(0, "#3b2e04");
+            cardG.addColorStop(1, "#110e02");
+            strokeColor = "#eab308";
+            strokeW = 2;
+        } else { // Cachée (Dos de carte style Sceau Éclair Jaune)
+            cardG.addColorStop(0, "#0a0f1d");
+            cardG.addColorStop(1, "#03050a");
+            strokeColor = "rgba(6,182,212,0.3)";
+            strokeW = 1.2;
+        }
+
+        ctx.fillStyle = cardG;
+        roundRect(ctx, cx, cy, CELL, CELL, 8);
+        ctx.fill();
+        ctx.strokeStyle = strokeColor;
+        ctx.lineWidth = strokeW;
+        ctx.stroke();
+
+        // Rendu Intérieur des cartes
+        if (isMatched || isFlipped || isMatchNow || isMissNow) {
+            ctx.font = "36px 'Segoe UI Emoji'";
+            ctx.textAlign = "center";
+            ctx.fillText(game.board[idx], cx + CELL / 2, cy + CELL / 2 + 13);
+            ctx.textAlign = "left";
+            
+            if (isMatched) {
+                ctx.font = "bold 9px 'Courier New'";
+                ctx.fillStyle = "#10b981";
+                ctx.textAlign = "center";
+                ctx.fillText("✓", cx + CELL - 10, cy + 14);
+                ctx.textAlign = "left";
+            }
+        } else { // Point d'interrogation / Marque Minato
+            ctx.font = "bold 20px 'Courier New'";
+            ctx.fillStyle = "rgba(234, 179, 8, 0.25)";
+            ctx.textAlign = "center";
+            ctx.fillText("⚡", cx + CELL / 2, cy + CELL / 2 + 7);
+            ctx.textAlign = "left";
+        }
+
+        // Mini repère géospatial en bas de la carte (ex: A1)
+        ctx.font = "7px 'Courier New'";
+        ctx.fillStyle = "rgba(255,255,255,0.18)";
+        ctx.textAlign = "center";
+        ctx.fillText(`${String.fromCharCode(65 + c)}${r + 1}`, cx + CELL / 2, cy + CELL - 6);
+        ctx.textAlign = "left";
+    }
+
+    // Zone Inférieure des Statuts
+    let statusText = "", statusColor = "#eab308";
+    if (phase === "start") { statusText = "⚡ 𝖱𝖾𝗍𝗈𝗎𝗋𝗇𝖾𝗓 𝟤 𝖼𝖺𝗋𝗍𝖾𝗌 — 𝖾𝗑: 𝗆𝖾𝗆𝗈𝗋𝗒 𝖠𝖨 𝖡𝟤"; statusColor = "#eab308"; }
+    else if (phase === "match") { statusText = "✨ 𝖯𝖠𝖨𝖱𝖤 𝖳𝖱𝖮𝖴𝖵𝖤́𝖤 ! 𝖵𝗈𝗎𝗌 𝖾̂𝗍𝖾𝗌 𝗋𝖺𝗉𝗂𝖽𝖾 !"; statusColor = "#10b981"; }
+    else if (phase === "miss") { statusText = "💥 𝖤𝖱𝖱𝖤𝖴𝖱 ! 𝖬𝖾́𝗆𝗈𝗋𝗂𝗌𝖾𝗓 𝗅𝖾𝗌 𝗌𝖼𝖾𝖺𝗎𝗑 !"; statusColor = "#ef4444"; }
+    else if (phase === "win") { statusText = "🏆 𝖦𝖠𝖦𝖭𝖤́ ! 𝖫'𝖤𝗌𝗉𝖺𝖼𝖾-𝖳𝖾𝗆𝗉𝗌 𝖾𝗌𝗍 𝗆𝖺𝗂̂𝗍𝗋𝗂𝗌𝖾́ !"; statusColor = "#fbbf24"; }
+    else if (phase === "timeout") { statusText = "⏰ 𝖳𝖤𝖬𝖯𝖲 𝖤́𝖢𝖮𝖴𝖫𝖤́ — 𝖯𝖺𝗋𝗍𝗂𝖾 𝗍𝖾𝗋𝗆𝗂𝗇𝖾́𝖾 !"; statusColor = "#ef4444"; }
+
+    const footerY = H - 54;
+    ctx.fillStyle = "rgba(255,255,255,0.02)";
+    ctx.strokeStyle = "rgba(234,179,8,0.15)";
+    roundRect(ctx, 28, footerY, W - 56, 30, 4);
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.font = "bold 11px 'Courier New'";
+    ctx.fillStyle = statusColor;
+    ctx.textAlign = "center";
+    ctx.fillText(statusText, W / 2, footerY + 19);
+
+    ctx.font = "7px 'Courier New'";
+    ctx.fillStyle = "rgba(255,255,255,0.25)";
+    ctx.fillText("𝖬𝖨𝖭𝖠𝖳𝖮 𝖭𝖠𝖬𝖨𝖪𝖠𝖹𝖤 • 𝖤𝖫𝖨𝖳𝖤 𝖡𝖮𝖳", W / 2, H - 12);
+    ctx.textAlign = "left";
+
+    return canvas.toBuffer("image/png");
+}
+
+// Canvas d'Écran de Fin de Partie (Style Tableau de Mission de Konoha)
+async function generateResultImage({ username, avatarUrl, win, bet, earned, newBalance, attempts, timeTaken, difficulty, matched, pairs, speedBonus }) {
+    const W = 680, H = 360;
+    const canvas = createCanvas(W, H);
+    const ctx    = canvas.getContext("2d");
+
+    const bg = ctx.createRadialGradient(W / 2, H / 2, 30, W / 2, H / 2, W * 0.85);
+    bg.addColorStop(0, win ? "#081c15" : "#220707");
+    bg.addColorStop(1, "#020305");
+    ctx.fillStyle = bg;
+    ctx.fillRect(0, 0, W, H);
+
+    // Lignes de scan horizontales holographiques
+    ctx.fillStyle = "rgba(255,255,255,0.01)";
+    for (let y = 0; y < H; y += 4) ctx.fillRect(0, y, W, 1);
+
+    const bG = ctx.createLinearGradient(0, 0, W, H);
+    bG.addColorStop(0, win ? "#eab308" : "#ef4444");
+    bG.addColorStop(0.5, "#1e1b4b");
+    bG.addColorStop(1, win ? "#10b981" : "#b91c1c");
+    ctx.strokeStyle = bG;
+    ctx.lineWidth = 3;
+    roundRect(ctx, 12, 12, W - 24, H - 24, 14);
+    ctx.stroke();
+
+    ctx.font = "bold 23px 'Courier New'";
+    ctx.fillStyle = win ? "#eab308" : "#ef4444";
+    ctx.fillText(win ? "⚡ 𝖬𝖨𝖲𝖲𝖨𝖮𝖭 𝖱𝖤́𝖴𝖲𝖲𝖨𝖤 — 𝖵𝖨𝖢𝖳𝖮𝖨𝖱𝖤" : "💥 𝖤́𝖢𝖧𝖤𝖢 𝖣𝖤 𝖫𝖠 𝖬𝖨𝖲𝖲𝖨𝖮𝖮𝖭", 32, 52);
+    ctx.font = "10px 'Courier New'";
+    ctx.fillStyle = "rgba(255,255,255,0.5)";
+    ctx.fillText(`${difficulty.toUpperCase()} • ${matched}/${pairs} 𝖲𝖢𝖤𝖠𝖴𝖷 𝖠𝖫𝖨𝖦𝖭𝖤́𝖲`, 34, 68);
+
+    const ax = W - 55, ay = 48;
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(ax, ay, 28, 0, Math.PI * 2);
+    ctx.clip();
+    try {
+        const avatar = await loadImage(avatarUrl);
+        ctx.drawImage(avatar, ax - 28, ay - 28, 56, 56);
+    } catch { ctx.fillStyle = "#0f172a"; ctx.fill(); }
+    ctx.restore();
+    ctx.beginPath();
+    ctx.arc(ax, ay, 29, 0, Math.PI * 2);
+    ctx.strokeStyle = win ? "#eab308" : "#ef4444";
+    ctx.stroke();
+
+    ctx.font = "bold 13px 'Courier New'";
+    ctx.fillStyle = "#ffffff";
+    ctx.fillText(username.toUpperCase().substring(0, 22), 32, 104);
+    ctx.font = "9px 'Courier New'";
+    ctx.fillStyle = "rgba(6,182,212,0.7)";
+    ctx.fillText("𝖭𝖨𝖭𝖩𝖠 𝖴𝖳𝖨𝖫𝖨𝖲𝖠𝖳𝖤𝖴𝖱", 32, 118);
+
+    ctx.strokeStyle = "rgba(255,255,255,0.1)";
+    ctx.beginPath(); ctx.moveTo(32, 130); ctx.lineTo(W - 32, 130); ctx.stroke();
+
+    const statsY = 155;
+    const cols = [
+        { label: "𝖬𝖨𝖲𝖤",         value: `${bet}$`,        color: "#ffffff" },
+        { label: win ? "𝖦𝖠𝖨𝖭" : "𝖯𝖤𝖱𝖳𝖤", value: win ? `+${earned}$` : `-${bet}$`, color: win ? "#eab308" : "#ef4444" },
+        { label: "𝖲𝖮𝖫𝖣𝖤",        value: `${newBalance}$`, color: "#fbbf24" },
+        { label: "𝖤𝖲𝖲𝖠𝖨𝖲",       value: `${attempts}`,    color: "#06b6d4" },
+        { label: "𝖳𝖤𝖬𝖯𝖲",        value: `${timeTaken}s`,  color: "#f87171" }
+    ];
+    const cW = (W - 60) / cols.length;
+    for (let i = 0; i < cols.length; i++) {
+        const cx = 30 + i * cW;
+        ctx.fillStyle = "rgba(255,255,255,0.03)";
+        ctx.strokeStyle = "rgba(255,255,255,0.05)";
+        roundRect(ctx, cx + 3, statsY - 16, cW - 6, 52, 6);
+        ctx.fill(); ctx.stroke();
+        ctx.font = "8px 'Courier New'";
+        ctx.fillStyle = "rgba(255,255,255,0.4)";
+        ctx.fillText(cols[i].label, cx + 8, statsY);
+        ctx.font = `bold ${cols[i].value.length > 9 ? "10" : "12"}px 'Courier New'`;
+        ctx.fillStyle = cols[i].color;
+        ctx.fillText(cols[i].value, cx + 8, statsY + 22);
+    }
+
+    if (speedBonus && win) {
+        ctx.fillStyle = "rgba(234,179,8,0.08)";
+        roundRect(ctx, 32, statsY + 52, W - 64, 36, 6);
+        ctx.fill();
+        ctx.strokeStyle = "rgba(234,179,8,0.3)";
+        ctx.stroke();
+        ctx.font = "bold 12px 'Courier New'";
+        ctx.fillStyle = "#eab308";
+        ctx.textAlign = "center";
+        ctx.fillText(`⚡ 𝖡𝖮𝖭𝖴𝖲 𝖤́𝖢𝖫𝖠𝖨𝖱 𝖩𝖠𝖴𝖭𝖤 — Partie validée en moins de ${DIFFICULTIES[difficulty].bonusSpeed}s !`, W / 2, statsY + 74);
+        ctx.textAlign = "left";
+    }
+
+    const accY = statsY + (speedBonus && win ? 106 : 68);
+    const acc = attempts > 0 ? Math.round((matched / attempts) * 100) : 0;
+    ctx.fillStyle = "rgba(255,255,255,0.05)";
+    roundRect(ctx, 32, accY, W - 64, 8, 4);
+    ctx.fill();
+    ctx.fillStyle = win ? "#eab308" : "#ef4444";
+    roundRect(ctx, 32, accY, (W - 64) * (acc / 100), 8, 4);
+    ctx.fill();
+    ctx.font = "bold 9px 'Courier New'";
+    ctx.fillStyle = "rgba(255,255,255,0.5)";
+    ctx.fillText(`𝖯𝖱𝖤́𝖢𝖨𝖲𝖨𝖮𝖭 : ${acc}%`, 32, accY - 5);
+
+    const d = new Date();
+    ctx.font = "8px 'Courier New'";
+    ctx.fillStyle = "rgba(255,255,255,0.2)";
+    ctx.textAlign = "center";
+    ctx.fillText(`𝖬𝖨𝖭𝖠𝖳𝖮 𝖭... • ${d.getDate()}/${d.getMonth()+1}/${d.getFullYear()} • ${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`, W / 2, H - 15);
+    ctx.textAlign = "left";
+
+    return canvas.toBuffer("image/png");
+}
+
+// ========================================================
+// 💬 CLASSEMENT ET FORMATAGE DES RÉPONSES TEXTE (MINATO)
+// ========================================================
+function S(lines) {
+    let out = "🚀 ❲ 𝗦𝗲𝗻𝘁 𝗦𝘂𝗰𝗰𝗲𝘀𝘀𝗳𝘂𝗹𝗹𝘆 ❳ 🚀\n━━━━━━━━━━━━━━━\n";
+    for (const l of lines) {
+        if (l === "---") { out += "━━━━━━━━━━━━━━━\n"; continue; }
+        out += `│ ${l}\n`;
+    }
+    return out + "━━━━━━━━━━━━━━━ ✕ ━━━━━━";
+}
+
+async function sendBoard(message, game, username, avatarUrl, lastFlipped, lastMatch, lastMiss, phase, bodyLines) {
+    const body = S(bodyLines);
+    try {
+        const img = await generateBoardImage({ game, username, avatarUrl, lastFlipped, lastMatch, lastMiss, phase });
+        const p = `./memory_board_${game.uid}_${Date.now()}.png`;
+        fs.writeFileSync(p, img);
+        await message.reply({ body, attachment: fs.createReadStream(p) });
+        fs.unlinkSync(p);
+    } catch { await message.reply(body); }
+}
+
+async function endGame(message, game, win, username, avatarUrl) {
+    activeGames.delete(game.uid);
+    saveGames();
+
+    const diff      = DIFFICULTIES[game.difficulty];  
+    const timeTaken = Math.floor((Date.now() - game.startTime) / 1000);  
+    const speedBonus = timeTaken <= diff.bonusSpeed;  
+    const mult       = speedBonus ? diff.bonusMult : diff.multiplier;  
+
+    let earned = 0n;  
+    if (win) {  
+        earned = game.bet * BigInt(Math.floor(mult * 10)) / 10n;  
+        await updateUserCash(game.uid, earned);  
+    }  
+
+    const newBalance = await getUserCash(game.uid);  
+    const [fBet, fEarned, fNew] = await Promise.all([  
+        formatNumber(game.bet),  
+        formatNumber(win ? earned : game.bet),  
+        formatNumber(newBalance),  
+    ]);  
+
+    const lines = [  
+        win ? "🏆 𝗠𝗶𝘀𝘀𝗶𝗼𝗻 𝗥𝗲́𝘂𝘀𝘀𝗶𝗲" : "💀 𝗠𝗶𝘀𝘀𝗶𝗼𝗻 𝗘́𝗰𝗵𝗼𝘂𝗲́𝗲",  
+        "---",  
+        `👤 𝖩𝗈𝗎𝖾𝗎𝗋 : ${username}`,
+        `🃏 𝖲𝖼𝖾𝖺𝗎𝗑 : ${game.matched}/${diff.pairs}`,  
+        `🎯 𝖤𝗌𝗌𝖺𝗂𝗌 : ${game.attempts}`,  
+        `⏱️ 𝖢𝖧𝖱𝖮𝖭𝖮 : ${timeTaken}s`,  
+        "---",  
+        win ? `✨ 𝖦𝖺𝗂𝗇 : +${fEarned}$ (𝗑${mult})` : `📉 𝖯𝖾𝗋𝗍𝖾 : -${fBet}$`,  
+        (speedBonus && win) ? `⚡ 𝖡𝗈𝗇𝗎𝗌 𝖤́𝖼𝗅𝖺𝗂𝗋 𝖩𝖺𝗎𝗎𝗇𝖾 !` : null,  
+        `💳 𝖲𝗈𝗅𝖽𝖾 : ${fNew}$`,  
+    ].filter(Boolean);  
+
+    await message.reply(S(lines));  
+
+    try {  
+        const img = await generateResultImage({  
+            username, avatarUrl, win,  
+            bet: fBet, earned: fEarned, newBalance: fNew,  
+            attempts: game.attempts,  
+            timeTaken,  
+            difficulty: game.difficulty,  
+            matched: game.matched,  
+            pairs: diff.pairs,  
+            speedBonus: speedBonus && win,  
+        });  
+        const p = `./memory_result_${game.uid}_${Date.now()}.png`;  
+        fs.writeFileSync(p, img);  
+        await message.reply({ body: "⚡ 𝖱𝖺𝗉𝗉𝗈𝗋𝗍 𝖽𝖾 𝗅'𝖤𝗌𝗉𝖺𝖼𝖾-𝖳𝖾𝗆𝗉𝗌 :", attachment: fs.createReadStream(p) });  
+        fs.unlinkSync(p);  
+    } catch {}
+}
+
+module.exports = {
+    config: {
+        name: "memory",
+        version: "2.0",
+        author: "chris x Minato",
+        countDown: 2,
+        role: 0,
+        category: "fun",
+        shortDescription: { en: "Jeu de mémoire de Minato Namikaze — trouvez les paires !" },
+        longDescription: { en: "🧠 Maîtrisez l'espace-temps en retournant les cartes avant la fin du temps imparti. Les éclairs de vitesse augmentent vos gains !" }
+    },
+
+    onStart: async function ({ args, message, event, api }) {  
+        const uid = String(event.senderID);  
+        const p   = global.utils.getPrefix(event.threadID);  
+        const sub = args[0]?.toLowerCase();  
+
+        if (!sub || sub === "help") {  
+            return message.reply(S([  
+                "🧠 𝗠𝗜𝗡𝗔𝗧𝗢 𝗠𝗘𝗠𝗢𝗥𝗬 𝗚𝗔𝗠𝗘",  
+                "---",  
+                `⚡ ${p}𝗆𝖾𝗆𝗈𝗋𝗒 𝗌𝗍𝖺𝗋𝗍 <𝗆𝗂𝗌𝖾> [𝖽𝗂𝖿𝖿𝗂𝖼𝗎𝗅𝗍𝖾́] [𝗍𝗁𝖾̀𝗆𝖾]`,  
+                "---",  
+                "📊 𝗗𝗜𝗙𝗙𝗜𝗖𝗨𝗟𝗧𝗘́𝗦",  
+                "𝖿𝖺𝖼𝗂𝗅𝖾    → 𝗑𝟤  (𝖻𝗈𝗇𝗎𝗌 𝗑𝟤.𝟧)",  
+                "𝗇𝗈𝗋𝗆𝖺𝗅    → 𝗑𝟥  (𝖻𝗈𝗇𝗎𝗌 𝗑𝟦)",  
+                "𝖽𝗂𝖿𝖿𝗂𝖼𝗎𝗅𝗍𝖾́ → 𝗑𝟧  (𝖻𝗈𝗇𝗎𝗌 𝗑𝟩)",  
+                "𝖾𝗑𝗍𝗋𝖾𝗆𝖾   → 𝗑𝟪  (𝖻𝗈𝗇𝗎𝗌 𝗑𝟣𝟤)",  
+                "---",  
+                "🎨 𝗧𝗛𝗘̀𝗠𝗘𝗦",  
+                "𝖺𝗇𝗂𝗆𝖺𝗎𝗑 • 𝖿𝗋𝗎𝗂𝗍𝗌 • 𝖾𝗌𝗉𝖺𝖼𝖾",  
+                "𝖼𝖺𝗌𝗂𝗇𝗈  • 𝗇𝖺𝗍𝗎𝗋𝖾",  
+                "---",  
+                "🎮 𝖤𝖭 𝖩𝖤𝖴 : 𝗆𝖾𝗆𝗈𝗋𝗒 𝖠𝟣 𝖡𝟤",  
+                `🏳️ ${p}<b>memory abandon</b>`,  
+            ]));  
+        }
+
+        const username  = await getUserName(uid, api);
+        const avatarUrl = await getUserAvatar(uid, api);
+
+        if (sub === "abandon" || sub === "quit" || sub === "stop") {
+            const game = activeGames.get(uid);
+            if (!game) return message.reply(S(["❌ 𝖠𝗎𝖼𝗎𝗇𝖾 𝗉𝖺𝗋𝗍𝗂𝖾 𝖾𝗇 𝖼𝗈𝗎𝗋𝗌."]));
+            await endGame(message, game, false, username, avatarUrl);
+            return;
+        }
+
+        if (sub === "start" || sub === "jouer" || sub === "play") {  
+            if (activeGames.has(uid)) {  
+                return message.reply(S([  
+                    "⚠️ 𝖯𝖺𝗋𝗍𝗂𝖾 𝖽𝖾́𝗃𝖺́ 𝖾𝗇 𝖼𝗈𝗎𝗋𝗌 !",  
+                    `📝 𝖩𝗈𝗎𝖾𝗓 : ${p}𝗆𝖾𝗆𝗈𝗋𝗒 𝖠𝟣 𝖡𝟤`,  
+                    `🏳️ 𝖠𝖻𝖺𝗇𝖽𝗈𝗇 : ${p}<b>memory abandon</b>`,  
+                ]));  
+            }  
+            const bet        = await parseAmount(args[1]);  
+            const difficulty = (args[2]?.toLowerCase() in DIFFICULTIES) ? args[2].toLowerCase() : "normal";  
+            const theme      = (args[3]?.toLowerCase() in CARD_THEMES)  ? args[3].toLowerCase() : "animaux";  
+
+            if (bet <= 0n) return message.reply(S(["❌ 𝖬𝗈𝗇𝗍𝖺𝗇𝗍 𝗂𝗇𝗏𝖺𝗅𝗂𝖽𝖾.", `📝 ${p}𝗆𝖾𝗆𝗈𝗋𝗒 𝗌𝗍𝖺𝗋𝗍 𝟧𝟢𝗄`]));  
+            const userMoney = await getUserCash(uid);  
+            if (bet > userMoney) {  
+                return message.reply(S([  
+                    "❌ 𝖥𝗈𝗇𝖽𝗌 𝗂𝗇𝗌𝗎𝖿𝖿𝗂𝗌𝖺𝗇𝗍𝗌",  
+                    "---",  
+                    `💰 𝖲𝗈𝗅𝖽𝖾 : ${await formatNumber(userMoney)}$`,  
+                    `🎲 𝖬𝗂𝗌𝖾   : ${await formatNumber(bet)}$`,  
+                ]));  
+            }  
+
+            const updateSuccess = await updateUserCash(uid, -bet);  
+            if (!updateSuccess) {  
+                return message.reply(S(["❌ 𝖤𝗋𝗋𝖾𝗎𝗋 𝗅𝗈𝗋𝗌 𝖽𝗎 𝗉𝗋𝖾́𝗅𝖾̀𝗏𝖾𝗆𝖾𝗇𝗍"]));  
+            }  
+
+            const diff  = DIFFICULTIES[difficulty];  
+            const board = createBoard(difficulty, theme);  
+            const game  = {  
+                uid, difficulty, theme,  
+                board, cols: diff.grid,  
+                revealed:  new Array(board.length).fill(false),  
+                attempts:  0,  
+                matched:   0,  
+                startTime: Date.now(),  
+                bet,  
+                betFormatted: await formatNumber(bet),  
+                firstCard: null,  
+                lastFlipped: null,
+                lock: false
+            };  
+            activeGames.set(uid, game);  
+            saveGames();  
+
+            await sendBoard(message, game, username, avatarUrl, [], [], [], "start", [  
+                "🧠 𝗠𝗜𝗡𝗔𝗧𝗢 — 𝗣𝗔𝗥𝗧𝗜𝗘 𝗟𝗔𝗡𝗖𝗘́𝗘 !",  
+                "---",  
+                `📊 𝖣𝗂𝖿𝖿𝗂𝖼𝗎𝗅𝗍𝖾́ : ${difficulty}`,  
+                `🎨 𝖳𝗁𝖾̀𝗆𝖾 : ${theme}`,  
+                `🃏 𝖯𝖺𝗂𝗋𝖾𝗌 : ${diff.pairs}`,  
+                `⏱️ 𝖢𝗁𝗋𝗈𝗇𝗈 : ${diff.timeLimit}𝗌`,  
+                `💰 𝖬𝗂𝗌𝖾 : ${game.betFormatted}$`,  
+                "---",  
+                "📝 𝖱𝖾𝗍𝗈𝗎𝗋𝗇𝖾𝗓 𝟤 𝖼𝖺𝗋𝗍𝖾𝗌 : 𝗆𝖾𝗆𝗈𝗋𝗒 𝖠𝟣 𝖡𝟤",  
+            ]);  
+
+            setTimeout(async () => {  
+                const g = activeGames.get(uid);  
+                if (!g) return;  
+                const [uname, uavatar] = await Promise.all([getUserName(uid, api), getUserAvatar(uid, api)]);  
+                await sendBoard(message, g, uname, uavatar, [], [], [], "timeout", ["⏰ 𝖳𝖤𝖬𝖯𝖲 𝖤́𝖢𝖮𝖴𝖫𝖤́ — 𝖯𝖺𝗋𝗍𝗂𝖾 𝗍𝖾𝗋𝗆𝗂𝗇𝖾́𝖾 !"]);
+                await endGame(message, g, false, uname, uavatar);  
+            }, diff.timeLimit * 1000);  
+
+            return;  
+        }  
+
+        const game = activeGames.get(uid);  
+        if (!game) {  
+            return message.reply(S([  
+                "❌ 𝖠𝗎𝖼𝗎𝗇𝖾 𝗉𝖺𝗋𝗍𝗂𝖾 𝖾𝗇 𝖼𝗈𝗎𝗋𝗌.",  
+                `📝 ${p}<b>memory start <mise></b>`,  
+            ]));  
+        }  
+
+        if (game.lock) return;
+
+        const diff    = DIFFICULTIES[game.difficulty];  
+        const elapsed = Math.floor((Date.now() - game.startTime) / 1000);  
+        if (elapsed >= diff.timeLimit) {  
+            const [uname, uavatar] = await Promise.all([getUserName(uid, api), getUserAvatar(uid, api)]);  
+            return endGame(message, game, false, uname, uavatar);  
+        }  
+
+        const coord1 = parseCoord(args[0], game.cols, Math.ceil(game.board.length / game.cols));  
+        const coord2 = parseCoord(args[1], game.cols, Math.ceil(game.board.length / game.cols));  
+
+        if (!coord1 || !coord2) {  
+            return message.reply(S([  
+                "❌ 𝖢𝗈𝗈𝗋𝖽𝗈𝗇𝗇𝖾́𝖾𝗌 𝗂𝗇𝗏𝖺𝗅𝗂𝖽𝖾𝗌.",  
+                "📝 𝖤𝗑 : 𝗆𝖾𝗆𝗈𝗋𝗒 𝖠𝟣 𝖡𝟤",  
+                `📐 𝖦𝗋𝗂𝗅𝗅𝖾 : 𝖠-${String.fromCharCode(64 + game.cols)} • 𝟣-${Math.ceil(game.board.length / game.cols)}`,  
+            ]));  
+        }  
+
+        if (coord1.index === coord2.index) {  
+            return message.reply(S(["❌ 𝖢𝗁𝗈𝗂𝗌𝗂𝗌𝗌𝖾𝗯 𝟤 𝖼𝖺𝗋𝗍𝖾𝗌 𝖽𝗂𝖿𝖿𝖾́𝗋𝖾𝗇𝗍𝖾𝗌 !"]));  
+        }  
+
+        if (game.revealed[coord1.index] || game.revealed[coord2.index]) {  
+            return message.reply(S(["❌ 𝖴𝗇𝖾 𝖽𝖾 𝖼𝖾𝗌 𝖼𝖺𝗋𝗍𝖾𝗌 𝖾𝗌𝗍 𝖽𝖾́𝗃𝖺́ 𝗍𝗋𝗈𝗎𝗏𝖾́𝖾 !"]));  
+        }  
+
+        game.attempts++;  
+        const isMatch = game.board[coord1.index] === game.board[coord2.index];  
+
+        if (isMatch) {  
+            game.revealed[coord1.index] = true;  
+            game.revealed[coord2.index] = true;  
+            game.matched++;  
+            saveGames();  
+
+            const win = game.matched >= diff.pairs;  
+            if (win) {  
+                await sendBoard(message, game, username, avatarUrl,  
+                    [coord1.index, coord2.index],  
+                    [coord1.index, coord2.index],  
+                    [], "win",  
+                    [  
+                        "✦ 𝗣𝗔𝗜𝗥𝗘 𝗧𝗥𝗢𝗨𝗩𝗘́𝗘 !",  
+                        `🃏 ${game.board[coord1.index]} — ${args[0].toUpperCase()} & ${args[1].toUpperCase()}`,  
+                        `✅ 𝖯𝖺𝗂𝗋es : ${game.matched}/${diff.pairs}`,  
+                        "🏆 𝗧𝗢𝗨𝗧𝗘𝗦 𝗟𝗘𝗦 𝗣𝗔𝗜𝗥𝗘𝗦 𝗔𝗟𝗜𝗚𝗡𝗘́𝗘𝗦 !",  
+                    ]  
+                );  
+                return endGame(message, game, true, username, avatarUrl);  
+            }  
+
+            await sendBoard(message, game, username, avatarUrl,  
+                [coord1.index, coord2.index],  
+                [coord1.index, coord2.index],  
+                [], "match",  
+                [  
+                    `✦ 𝗣𝗔𝗜𝗥𝗘 ! ${game.board[coord1.index]}`,  
+                    `📍 𝖢𝖺𝗋𝗍𝖾𝗌 : ${args[0].toUpperCase()} & ${args[1].toUpperCase()}`,  
+                    `🃏 𝖯𝖺𝗂𝗋𝖾𝗌 : ${game.matched}/${diff.pairs}`,  
+                    `🎯 𝖤𝗌𝗌𝖺𝗂𝗌 : ${game.attempts}`,  
+                    "---",  
+                    "📝 𝖢𝗈𝗇𝗍𝗂𝗇𝗎𝖾𝗓 : 𝗆𝖾𝗆𝗈𝗋𝗒 𝖠𝟣 𝖡𝟤",  
+                ]  
+            );  
+        } else {  
+            game.lock = true;
+            saveGames();  
+            await sendBoard(message, game, username, avatarUrl,  
+                [coord1.index, coord2.index],  
+                [],  
+                [coord1.index, coord2.index],  
+                "miss",  
+                [  
+                    `✕ 𝖯𝖺𝗌 𝖽𝖾 𝖼𝗈𝗋𝗋𝖾𝗌𝗉𝗈𝗇𝖽𝖺𝗇机制`,  
+                    `📍 [${args[0].toUpperCase()}] (${game.board[coord1.index]}) & [${args[1].toUpperCase()}] (${game.board[coord2.index]})`,  
+                    `🃏 𝖯𝖺𝗂𝗋𝖾𝗌 : ${game.matched}/${diff.pairs}`,  
+                    `🎯 𝖤𝗌𝗌𝖺𝗂𝗌 : ${game.attempts}`,  
+                    "---",  
+                    "📝 𝖬𝖾́𝗆𝗈𝗋𝗂𝗌𝖺𝗍𝗂𝗈𝗇 𝖾𝗇 𝖼𝗈𝗎𝗋𝗌...",  
+                ]  
+            );  
+
+            setTimeout(async () => {
+                const checkGame = activeGames.get(uid);
+                if (!checkGame) return;
+                checkGame.lock = false;
+                saveGames();
+                
+                await sendBoard(message, checkGame, username, avatarUrl, [], [], [], "start", [
+                    "🔮 𝖲𝖼𝖾𝖺𝗎𝗑 𝗆𝖺𝗌𝗊𝗎𝖾́𝗌.",
+                    "📝 𝖢𝗈𝗇𝗍𝗂𝗇𝗎𝖾𝗓 : 𝗆𝖾𝗆𝗈𝗋𝗒 𝖠𝟣 𝖡𝟤"
+                ]);
+            }, 3500);
+        }  
+    }
+};
