@@ -718,7 +718,7 @@ async function generateResultImage({ username, avatarUrl, win, bet, earned, newB
     ctx.font = "8px 'Courier New'";
     ctx.fillStyle = (win ? diffColor : "#ef4444") + "44";
     ctx.textAlign = "center";
-    ctx.fillText(`HEDGEHOG MEMORY • ${d.getDate()}/${d.getMonth()+1}/${d.getFullYear()} • ${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`, W / 2, H - 16);
+    ctx.fillText(`MINATO MEMORY • ${d.getDate()}/${d.getMonth()+1}/${d.getFullYear()} • ${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`, W / 2, H - 16);
     ctx.textAlign = "left";
 
     return canvas.toBuffer("image/png");
